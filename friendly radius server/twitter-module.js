@@ -31,6 +31,7 @@ exports.RetrieveFriends = function (token, username, callback) {
 
                 //Parse list of ID's
                 var objResult = JSON.parse(result);
+                console.log("Response received: ", result);
 
                 exports.RetrieveBatchUsers(token, objResult.ids, function (result) {
                     //At this point, result is an array of strings containing an array of "fully-hydrated" user objects.
