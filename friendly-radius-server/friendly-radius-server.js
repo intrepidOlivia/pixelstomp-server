@@ -47,7 +47,6 @@ var pixelServer = http.createServer(function (request, response)
         break;
 
         case '/geocoding':
-        console.log("Searching coordinates for location " + queries['location']);
         geocoding.MakeGeocodingRequest(queries['location'], function (result) {
             response.writeHead(200, {
                 'Access-Control-Allow-Origin': 'http://pixelstomp.com'
