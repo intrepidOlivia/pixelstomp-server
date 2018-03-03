@@ -95,12 +95,17 @@ exports.RetrieveBatchUsers = function (token, ids, callback) {
         }
     }
 
-    var pathstring = '/1.1/users/lookup.json?user_id=' + idstring;
-    queue.push(pathstring);
+	//The if statement provides for multiples of 50.
+	if (idstring != '')
+	{
+	    var pathstring = '/1.1/users/lookup.json?user_id=' + idstring;
+	    queue.push(pathstring);
+	}
 
     count = 0;
     for (p in queue)
     {
+	console.log("Performing request for path # " + p + ' which is ' + queue[p] + ' .');
         count += 1;
         PerformPostRequest(token, queue[p], function (result) {
             resultsArray.push(result);      //Creates an array of [strings representing an array of objects]
@@ -143,6 +148,7 @@ function PerformPostRequest(token, path, callback)
         else
         {
             console.log('The following status code was received from the server: ' + response.statusCode + response.statusMessage);
+		console.log('The following path had been requested: ', path);
             callback('');
         }
     });

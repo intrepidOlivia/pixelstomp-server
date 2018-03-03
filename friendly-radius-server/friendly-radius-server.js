@@ -16,11 +16,11 @@ var pixelServer = http.createServer(function (request, response)
 
     switch (path)
     {
-        case '/home/misha/friendly-radius/twitter-authenticate.js':
+        case '/friendly-radius/twitter-authenticate.js':
         response = ServePage(request, response);
         break;
 
-        case '/home/misha/friendly-radius/twitter-user':
+        case '/friendly-radius/twitter-user':
         console.log("Initiated request on twitter user " + queries.username);
         twitter.GetTwitterToken(function (token) {
             twitterToken = token;
@@ -34,7 +34,7 @@ var pixelServer = http.createServer(function (request, response)
         });
         break;
 
-        case '/home/misha/friendly-radius/twitter-friends':
+        case '/friendly-radius/twitter-friends':
         console.log("Initiated request for friends of twitter user " + queries.username);
         twitter.RetrieveFriends(twitterToken, queries.username, function (result) {
             response.writeHead(200, {
@@ -67,6 +67,7 @@ pixelServer.on('error', function (err){
     console.log('The following error has been encountered with the server receiving requests from Pixelstomp: ' + err.message + '\n');
 });
 
+//TODO: improve this to function better with the path that is actually going to be requested
 function ServePage(request, response)
 {
     var path = request.url;
