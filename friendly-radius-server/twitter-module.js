@@ -15,7 +15,6 @@ exports.RetrieveFriends = function (token, username, callback) {
         }
     };
 
-    console.log('Making a request to retrieve friends of Twitter user ' + username);
     var request = https.request(options, function (response) {
         response.setEncoding('utf8');
         if (response.statusCode == 200)
@@ -25,9 +24,6 @@ exports.RetrieveFriends = function (token, username, callback) {
                 result +=chunk;
             });
             response.on('end', function () {
-
-                //Temporary
-                console.log('List of Twitter friends received.');
 
                 //Parse list of ID's
                 var objResult = JSON.parse(result);
@@ -194,7 +190,7 @@ exports.OldRetrieveBatchusers = function (token, ids, callback) {
 };
 
 exports.RetrieveTwitterUser = function (token, username, callback) {
-    console.log("Requesting information from Twitter for user " + username);
+    console.log(new Date().toUTCString() + "> Requesting information from Twitter for user " + username);
 
     var https = require('https');
     var options = {
@@ -209,7 +205,6 @@ exports.RetrieveTwitterUser = function (token, username, callback) {
     var request = https.request(options, function (response) {
         if (response.statusCode == 200)
         {
-            console.log('Successful response received for query about user.');
             response.setEncoding('utf8');
             var result = '';
             response.on('data', function (chunk) {
@@ -253,7 +248,6 @@ exports.GetTwitterToken = function (callback) {
 
          var request = https.request(options, function (response){
 
-             console.log("Request made to Twitter servers, a response was received");
              resdata = '';
 
              //Handle Twitter's response

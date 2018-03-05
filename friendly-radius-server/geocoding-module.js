@@ -15,7 +15,7 @@ exports.MakeGeocodingRequest = function (location, callback) {
     var request = https.request(options, function (response){
         response.setEncoding('utf8');
         response.on('error', function (err){
-            console.log("The following error was encountered when retrieving a Geocoding result: " + err.message);
+            console.log(new Date().toUTCString() + "> The following error was encountered when retrieving a Geocoding result: " + err.message);
         });
         var result = '';
         response.on('data', function (chunk){
@@ -26,7 +26,7 @@ exports.MakeGeocodingRequest = function (location, callback) {
         });
     });
     request.on('error', function (err){
-        console.log("The following error was encountered by geocoding.MakeGeocodingRequest: " + err.message);
+        console.log(new Date().toUTCString() + "> The following error was encountered by geocoding.MakeGeocodingRequest: " + err.message);
     });
     request.end();
 };
@@ -53,7 +53,7 @@ exports.ParseCoords = function (result) {
         return JSON.stringify(coords);
     }
     else{
-        console.log("Status returned by geocoding request: " + jsonResult.status);
+        console.log(new Date().toUTCString() + "> Status returned by geocoding request: " + jsonResult.status);
         return JSON.stringify(null);
     }
 };

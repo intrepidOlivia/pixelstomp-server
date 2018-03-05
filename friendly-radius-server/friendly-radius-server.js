@@ -21,7 +21,7 @@ var pixelServer = http.createServer(function (request, response)
         break;
 
         case '/friendly-radius/twitter-user':
-        console.log("Initiated request on twitter user " + queries.username);
+        console.log(new Date().toUTCString() + "> Initiated request on twitter user " + queries.username);
         twitter.GetTwitterToken(function (token) {
             twitterToken = token;
             twitter.RetrieveTwitterUser(token, queries.username, function (result){
@@ -35,7 +35,7 @@ var pixelServer = http.createServer(function (request, response)
         break;
 
         case '/friendly-radius/twitter-friends':
-        console.log("Initiated request for friends of twitter user " + queries.username);
+        console.log(new Date().toUTCString() + "> Initiated request for friends of twitter user " + queries.username);
         twitter.RetrieveFriends(twitterToken, queries.username, function (result) {
             response.writeHead(200, {
                 'Access-Control-Allow-Origin': 'http://pixelstomp.com'
