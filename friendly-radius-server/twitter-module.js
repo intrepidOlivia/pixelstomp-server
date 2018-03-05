@@ -31,8 +31,6 @@ exports.RetrieveFriends = function (token, username, callback) {
 
                 //Parse list of ID's
                 var objResult = JSON.parse(result);
-                console.log("Response received: ", result);
-
                 exports.RetrieveBatchUsers(token, objResult.ids, function (result) {
                     //At this point, result is an array of strings containing an array of "fully-hydrated" user objects.
                     //we need to find which users have locations, and isolate them.
@@ -105,7 +103,6 @@ exports.RetrieveBatchUsers = function (token, ids, callback) {
     count = 0;
     for (p in queue)
     {
-	console.log("Performing request for path # " + p + ' which is ' + queue[p] + ' .');
         count += 1;
         PerformPostRequest(token, queue[p], function (result) {
             resultsArray.push(result);      //Creates an array of [strings representing an array of objects]
@@ -237,8 +234,8 @@ exports.GetTwitterToken = function (callback) {
      //Create a client to send the request to Twitter using the app key.
      console.log("Attempting to authenticate via Twitter...");
      var bearerToken;
-
-         var appkey = process.env.TWITTER_APPKEY;
+    let auth = require('./environment');
+    var appkey = auth.getTwitterKey();
          var options = {
              hostname: 'api.twitter.com',
              path: '/oauth2/token',
