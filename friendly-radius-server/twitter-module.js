@@ -238,7 +238,7 @@ exports.GetTwitterToken = function (callback) {
      console.log("Attempting to authenticate via Twitter...");
      var bearerToken;
 
-         var appkey = 'aWFuQ1gyUlczTFcxSWphWlpzanh4RnVjZTpMbWNSMWVFSFdLeTRZQjBEQW82bXFzd2xDRk9FR0xGbEdOWVVzRm1SbnA5bkRZSzUxMw==';
+         var appkey = process.env.TWITTER_APPKEY;
          var options = {
              hostname: 'api.twitter.com',
              path: '/oauth2/token',
