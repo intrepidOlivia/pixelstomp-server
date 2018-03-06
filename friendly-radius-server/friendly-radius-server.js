@@ -56,6 +56,18 @@ var pixelServer = http.createServer(function (request, response)
         });
         break;
 
+        case '/log':
+        if (request.method == 'POST')
+        {
+            console.log(queries.message);
+            response.writeHead(200, {
+                'Access-Control-Allow-Origin': 'http://pixelstomp.com'
+            });
+            response.write('Log message received.');
+            response.end();
+        }
+        break;
+
         default:
         response = Serve404(request, response);
     }
