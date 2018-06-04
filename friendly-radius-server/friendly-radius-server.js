@@ -14,6 +14,8 @@ var pixelServer = http.createServer(function (request, response)
     var path = reqUrl.pathname;
     var queries = reqUrl.query;
 
+    response.setHeader('Access-Control-Allow-Origin', '*');
+
     switch (path)
     {
         case '/friendly-radius/twitter-authenticate.js':
@@ -25,9 +27,6 @@ var pixelServer = http.createServer(function (request, response)
         twitter.GetTwitterToken(function (token) {
             twitterToken = token;
             twitter.RetrieveTwitterUser(token, queries.username, function (result){
-                response.writeHead(200, {
-                    'Access-Control-Allow-Origin': 'http://pixelstomp.com'
-                });
                 response.write(result);
                 response.end();
             });
@@ -37,10 +36,6 @@ var pixelServer = http.createServer(function (request, response)
         case '/friendly-radius/twitter-friends':
         console.log(new Date().toUTCString() + "> Initiated request for friends of twitter user " + queries.username);
         twitter.RetrieveFriends(twitterToken, queries.username, function (result) {
-            response.writeHead(200, {
-                'Access-Control-Allow-Origin': 'http://pixelstomp.com'
-            });
-
             response.write(result);
             response.end();
         });
@@ -48,9 +43,6 @@ var pixelServer = http.createServer(function (request, response)
 
         case '/geocoding':
         geocoding.MakeGeocodingRequest(queries['location'], function (result) {
-            response.writeHead(200, {
-                'Access-Control-Allow-Origin': 'http://pixelstomp.com'
-            });
             response.write(geocoding.ParseCoords(result));
             response.end();
         });
@@ -60,9 +52,6 @@ var pixelServer = http.createServer(function (request, response)
         if (request.method == 'POST')
         {
             console.log(queries.message);
-            response.writeHead(200, {
-                'Access-Control-Allow-Origin': 'http://pixelstomp.com'
-            });
             response.write('Log message received.');
             response.end();
         }
@@ -72,8 +61,8 @@ var pixelServer = http.createServer(function (request, response)
         response = Serve404(request, response);
     }
 });
-pixelServer.listen(80, function (){
-    console.log('pixelServer listening on port 80.');
+pixelServer.listen(8080, function (){
+    console.log('pixelServer listening on port 8080.');
 });
 pixelServer.on('error', function (err){
     console.log('The following error has been encountered with the server receiving requests from Pixelstomp: ' + err.message + '\n');
