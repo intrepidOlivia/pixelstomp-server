@@ -30,7 +30,10 @@ function makeAppRequest() {
         method: 'POST',
         host: 'www.reddit.com',
         path: `/api/v1/access_token`,
-        headers: {}
+        headers: {
+            Authorization: `Basic ${Buffer.from(${APP_ID}).toString('base64')})}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
     }
     let postData = `grant_type=client_credentials`;
     let request = https.request(options, function (response) {
@@ -50,6 +53,16 @@ function makeAppRequest() {
     });
     request.write(postData);
     request.end();
+}
+
+function makeAuthorizedRequest() {
+    let https = require('https');
+    let options = {
+        method: 'GET',
+        host: 'oauth.reddit.com',
+        path: '',
+        headers: {}
+    };
 }
 
 function parseResponse(response) {
