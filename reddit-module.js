@@ -24,7 +24,7 @@ let bearerToken = null;
 //     request.end();
 // }
 
-exports.makeAppRequest = function() {
+function makeAppRequest() {
     let https = require('https');
     let options = {
         method: 'POST',
