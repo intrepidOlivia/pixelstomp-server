@@ -36,12 +36,12 @@ function makeAppRequest() {
     let request = https.request(options, function (response) {
         response.setEncoding('utf8');
         let result = parseResponse(response);
-        console.log('result retrieved from Reddit:', result);
-        bearerToken = {
-            token: result.access_token,
-            expiry: result.expires_in,
-            scope: scope
-        };
+        // console.log('result retrieved from Reddit:', result);
+        // bearerToken = {
+        //     token: result.access_token,
+        //     expiry: result.expires_in,
+        //     scope: scope
+        // };
     });
     request.write(postData);
     request.end();
@@ -52,6 +52,7 @@ function parseResponse(response) {
     response.on('data', (chunk) => {
         result += chunk;
     });
+    console.log('Stringified result:', result);
     try {
         return JSON.parse(result);
     }
