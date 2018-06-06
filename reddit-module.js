@@ -34,8 +34,13 @@ function makeAppRequest() {
     }
     let postData = `grant_type=client_credentials`;
     let request = https.request(options, function (response) {
-        response.setEncoding('utf8');
-        let result = parseResponse(response);
+        if (response.statusCode == 200) {
+            response.setEncoding('utf8');
+            let result = parseResponse(response);
+        } else {
+            console.log('Status code received from Reddit was:', response.statusCode);
+            console.log('With the following message:', response.statusMessage);
+        }
         // console.log('result retrieved from Reddit:', result);
         // bearerToken = {
         //     token: result.access_token,
