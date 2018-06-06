@@ -31,7 +31,7 @@ function makeAppRequest() {
         host: 'www.reddit.com',
         path: `/api/v1/access_token`,
         headers: {
-            'Authorization': `Basic ${Buffer.from(${APP_ID}).toString('base64')})}`,
+            'Authorization': `Basic ${Buffer.from(${APP_ID}).toString('base64')}}`,
             'Content-Type': 'application/x-www-form-urlencoded'
         }
     }
