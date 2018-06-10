@@ -57,6 +57,10 @@ var pixelServer = http.createServer(function (request, response)
         }
         break;
 
+        case '/reddit/comments':
+            requestRedditorComments(queries.user);
+            break;
+
         default:
         response = Serve404(request, response);
     }
@@ -67,6 +71,14 @@ pixelServer.listen(8080, function (){
 pixelServer.on('error', function (err){
     console.log('The following error has been encountered with the server receiving requests from Pixelstomp: ' + err.message + '\n');
 });
+
+function requestRedditorComments(user) {
+    let reddit = require('./reddit-module.js');
+    reddit.getAllComments(user, function (result) {
+        response.write(result);
+        response.end();
+    });
+}
 
 //TODO: improve this to function better with the path that is actually going to be requested
 function ServePage(request, response)

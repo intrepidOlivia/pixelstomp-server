@@ -8,9 +8,9 @@ let USER_AGENT = 'pixelstomp-reddit-querier by poplopo';
 let requestID = null;   // Shall be the timestamp, in seconds, that an access token was most recently requested.
 let expiry = null;      // Shall be the timestamp, in seconds, that the current access token will expire.
 let bearerToken = null; // Shall be the current access token.
-let queuedPaths = [];   // Queued paths to query after another bearer token is retrieved.
-
-// TODO: Figure out how to page through listings.
+let queuedArgs = [];   // Queued paths to query after another bearer token is retrieved.
+let after = '';
+let before = '';
 
 function retrieveAccessToken(callback) {
     let https = require('https');
@@ -34,7 +34,7 @@ function retrieveAccessToken(callback) {
                 .then((result) => {
                     bearerToken = result.access_token || null;
                     setTimer(result.expires_in || new Date().getSeconds());
-                    if (callback) { callback(); }
+                    callback && callback(queuedArgs.shift(), queuedArgs.shift());
                     console.log('Request for bearer token complete. Bearer token has a current value of:', bearerToken);
                 })
                 .catch((errResult) => {
@@ -55,20 +55,22 @@ function makeAuthorizedRequest(path, callback) {
     // First check to make sure there is an access token and it is still valid
     if (!bearerToken) {
         console.log('Request initiated but no bearer token was found. Requesting bearer token.');
-        queuedPaths.push(path);
+        queuedArgs.push(path);
+        queuedArgs.push(callback);
         retrieveAccessToken(makeAuthorizedRequest);
         return;
     }
 
     if (expiry <= new Date().getSeconds()) {
         console.log('Request initiated but bearer token was expired. Requesting new bearer token.');
-        queuedPaths.push(path);
+        queuedArgs.push(path);
+        queuedArgs.push(callback);
         retrieveAccessToken(makeAuthorizedRequest);
         return;
     }
 
     if (!path) {
-        path = queuedPaths.shift();
+        path = queuedArgs.shift();
     }
 
     let https = require('https');
@@ -118,6 +120,74 @@ function parseResponse(response) {
             }
             catch (e) {
                 reject(result);
+            }
+        });
+    });
+}
+
+function getAllComments(username, callback) {
+    //send the request to retrieve the first page of comments
+    let path = `/user/${username}/comments`;
+    makeAuthorizedRequest(path, function (result) {
+        if (typeof result === 'string') {
+            throw new Error('Result was wrong format:\n' + result);
+        }
+
+        if (!result.data.children) {
+            throw new Error('Result held no comments:\n' + JSON.stringify(result));
+        }
+
+        console.log('result:', result);
+
+        let commentSet = gatherComments(result);
+
+        if (result.data.after) {
+            getNextPage(path, result.data.after, commentSet, commentSet.length)
+                .then((fullCommentSet) => {
+                    // Do something with the full array
+                    callback(fullCommentSet);
+                })
+                .catch((message) => {
+                    throw new Error(message);
+                });
+        } else {
+            // Do something with the full array
+            callback(commentSet);
+        }
+    });
+}
+
+function gatherComments(result) {
+    let commentSet = [];
+    // hold all the comments in an array of strings.
+    result.data.children.forEach((comment) => {
+        commentSet.push({
+            body: comment.data.body,
+            subreddit: comment.data.subreddit_id,
+            permalink: comment.data.permalink,
+            created: comment.data.created
+        });
+    });
+    return commentSet;
+}
+
+function getNextPage(path, after, commentSet, count) {
+    console.log('retrieving next page of results with after token:', after);
+    return new Promise(function (resolve, reject) {
+        makeAuthorizedRequest(`${path}?after=${after}&count=${count}`, function (result) {
+            commentSet = commentSet.concat(gatherComments(result));
+            if (result.data.after) {
+                getNextPage(path, result.data.after, commentSet, commentSet.length)
+                    .then((fullCommentSet) => {
+                        console.log(`Full comment set retrieved with a count of ${fullCommentSet.length}. Resolving...`);
+                        resolve(fullCommentSet);
+                    })
+                    .catch((message) => {
+                        reject(message);
+                    });
+            } else {
+                console.log('variable count of comments retrieved:', commentSet.length);
+                resolve(commentSet);
             }
         });
     });
