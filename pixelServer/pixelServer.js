@@ -75,7 +75,7 @@ pixelServer.on('error', function (err){
 function requestRedditorComments(user, response) {
     let reddit = require('./reddit-module');
     reddit.getAllComments(user, function (result) {
-        response.write(result);
+        response.write(JSON.stringify(result));
         response.end();
     });
 }
