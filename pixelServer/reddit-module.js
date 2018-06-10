@@ -125,7 +125,7 @@ function parseResponse(response) {
     });
 }
 
-function getAllComments(username, callback) {
+exports.getAllComments = function(username, callback) {
     //send the request to retrieve the first page of comments
     let path = `/user/${username}/comments`;
     makeAuthorizedRequest(path, function (result) {
