@@ -73,7 +73,7 @@ pixelServer.on('error', function (err){
 });
 
 function requestRedditorComments(user) {
-    let reddit = require('./reddit-module.js');
+    let reddit = require('./reddit-module');
     reddit.getAllComments(user, function (result) {
         response.write(result);
         response.end();
@@ -131,5 +131,3 @@ function Serve404(request, response)
         return response;
     }
 }
-
-
