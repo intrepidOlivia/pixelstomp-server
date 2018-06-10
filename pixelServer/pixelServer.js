@@ -58,7 +58,7 @@ var pixelServer = http.createServer(function (request, response)
         break;
 
         case '/reddit/comments':
-            requestRedditorComments(queries.user);
+            requestRedditorComments(queries.user, response);
             break;
 
         default:
@@ -72,7 +72,7 @@ pixelServer.on('error', function (err){
     console.log('The following error has been encountered with the server receiving requests from Pixelstomp: ' + err.message + '\n');
 });
 
-function requestRedditorComments(user) {
+function requestRedditorComments(user, response) {
     let reddit = require('./reddit-module');
     reddit.getAllComments(user, function (result) {
         response.write(result);
