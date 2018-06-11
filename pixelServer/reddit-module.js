@@ -160,7 +160,7 @@ exports.getAllComments = function(username, callback) {
 function gatherComments(result) {
     let commentSet = [];
     // hold all the comments in an array of strings.
-    result.data.children.forEach((comment) => {
+    result.data.children && result.data.children.forEach((comment) => {
         commentSet.push({
             body: comment.data.body,
             subreddit: comment.data.subreddit_id,
@@ -171,6 +171,14 @@ function gatherComments(result) {
     return commentSet;
 }
 
+/**
+ *
+ * @param path
+ * @param after
+ * @param commentSet
+ * @param count
+ * @returns {Promise<any>}
+ */
 function getNextPage(path, after, commentSet, count) {
     console.log('retrieving next page of results with after token:', after);
     return new Promise(function (resolve, reject) {
