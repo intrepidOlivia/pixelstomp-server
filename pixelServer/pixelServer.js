@@ -61,6 +61,10 @@ var pixelServer = http.createServer(function (request, response)
             requestRedditorComments(queries.user, response);
             break;
 
+        case '/reddit/wordcloud':
+            generateWordCloud(queries.user, response);
+            break;
+
         default:
         response = Serve404(request, response);
     }
@@ -77,6 +81,22 @@ function requestRedditorComments(user, response) {
     reddit.getAllComments(user, function (result) {
         response.write(JSON.stringify(result));
         response.end();
+    });
+}
+
+function generateWordCloud(user, response) {
+    let reddit = require('./reddit-module');
+    reddit.getAllComments(user, function (result) {
+        let wordcloud = require('./wordcloud-module');
+
+        //Temporary
+        var words = ["Hello", "world", "normally", "you", "want", "more", "words", "than", "this"];
+
+        wordcloud.getWordCloud(words, function (wordcloud_result) {
+            console.log(wordcloud_result);
+            response.write(JSON.stringify(wordcloud_result));
+            response.end();
+        });
     });
 }
 
