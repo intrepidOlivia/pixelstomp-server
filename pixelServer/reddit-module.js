@@ -134,8 +134,9 @@ exports.getAllComments = function(username, callback) {
             throw new Error('Result was wrong format:\n' + result);
         }
 
-        // Temporary
-        console.log('result:', result);
+        if (result.error) {
+          throw new Error(`${result.error}: ${result.message}`);
+        }
 
         if (!result.data.children) {
             throw new Error('Result held no comments:\n' + JSON.stringify(result));
