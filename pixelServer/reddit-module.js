@@ -127,7 +127,7 @@ function parseResponse(response) {
 
 exports.getAllComments = function(username, callback) {
     //send the request to retrieve the first page of comments
-    console.log(`Retrieving comments for redditor ${username}`:);
+    console.log(`Retrieving comments for redditor ${username}:`);
     let path = `/user/${username}/comments`;
     makeAuthorizedRequest(path, function (result) {
         if (typeof result === 'string') {
