@@ -135,7 +135,7 @@ exports.getAllComments = function(username, callback) {
         }
 
         // Temporary
-        console.log('result.data:', result.data);
+        console.log('result:', result);
 
         if (!result.data.children) {
             throw new Error('Result held no comments:\n' + JSON.stringify(result));
