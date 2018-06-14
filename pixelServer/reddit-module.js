@@ -135,7 +135,7 @@ exports.getAllComments = function(username, callback) {
         }
 
         if (result.error) {
-          throw new Error(`${result.error}: ${result.message}`);
+          callback(result);
         }
 
         if (!result.data.children) {
