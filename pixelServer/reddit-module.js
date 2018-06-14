@@ -127,17 +127,19 @@ function parseResponse(response) {
 
 exports.getAllComments = function(username, callback) {
     //send the request to retrieve the first page of comments
+    console.log(`Retrieving comments for redditor ${username}`:);
     let path = `/user/${username}/comments`;
     makeAuthorizedRequest(path, function (result) {
         if (typeof result === 'string') {
             throw new Error('Result was wrong format:\n' + result);
         }
 
+        // Temporary
+        console.log('result.data:', result.data);
+
         if (!result.data.children) {
             throw new Error('Result held no comments:\n' + JSON.stringify(result));
         }
-
-        console.log('result:', result);
 
         let commentSet = gatherComments(result);
 
@@ -180,21 +182,19 @@ function gatherComments(result) {
  * @returns {Promise<any>}
  */
 function getNextPage(path, after, commentSet, count) {
-    console.log('retrieving next page of results with after token:', after);
     return new Promise(function (resolve, reject) {
         makeAuthorizedRequest(`${path}?after=${after}&count=${count}`, function (result) {
             commentSet = commentSet.concat(gatherComments(result));
             if (result.data.after) {
                 getNextPage(path, result.data.after, commentSet, commentSet.length)
                     .then((fullCommentSet) => {
-                        console.log(`Full comment set retrieved with a count of ${fullCommentSet.length}. Resolving...`);
                         resolve(fullCommentSet);
                     })
                     .catch((message) => {
                         reject(message);
                     });
             } else {
-                console.log('variable count of comments retrieved:', commentSet.length);
+                console.log('Number of comments retrieved:', commentSet.length);
                 resolve(commentSet);
             }
         });

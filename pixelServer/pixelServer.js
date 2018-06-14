@@ -87,16 +87,7 @@ function requestRedditorComments(user, response) {
 function generateWordCloud(user, response) {
     let reddit = require('./reddit-module');
     reddit.getAllComments(user, function (result) {
-        let wordcloud = require('./wordcloud-module');
-
-        //Temporary
-        var words = ["Hello", "world", "normally", "you", "want", "more", "words", "than", "this"];
-
-        wordcloud.getWordCloud(words, function (wordcloud_result) {
-            console.log(wordcloud_result);
-            response.write(JSON.stringify(wordcloud_result));
-            response.end();
-        });
+        // Add word cloud stuff here
     });
 }
 
