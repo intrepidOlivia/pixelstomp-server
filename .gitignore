@@ -1,2 +1,6 @@
 friendly-radius-server/environment.js
 friendly-radius-server/output.log
+node_modules/
+.vs/slnx.sqlite
+.vs/pixelstomp/v15/.suo
+.vs/VSWorkspaceState.json

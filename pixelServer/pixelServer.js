@@ -65,6 +65,10 @@ var pixelServer = http.createServer(function (request, response)
             generateWordCloud(queries.user, response);
             break;
 
+        case '/reddit/track_votes':
+            trackRedditComments(queries.subreddit, queries.id, response);
+            break;
+
         default:
         response = Serve404(request, response);
     }
@@ -88,6 +92,14 @@ function generateWordCloud(user, response) {
     let reddit = require('./reddit-module');
     reddit.getAllComments(user, function (result) {
         // Add word cloud stuff here
+    });
+}
+
+function trackRedditComments(subreddit, postID, response) {
+    let reddit = require('./reddit-module');
+    reddit.getTrackedVotes(subreddit, postID, function (result) {
+        response.write(JSON.stringify(result));
+        response.end();
     });
 }
 
