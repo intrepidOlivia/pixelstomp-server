@@ -147,7 +147,7 @@ function parseResponse(response) {
 
 exports.searchForRedditor = function(username, callback) {
     makeAuthorizedRequest(`/user/${username}/about`, function (result) {
-        callback(result);
+        callback(JSON.stringify(result));
     });
 };
 
