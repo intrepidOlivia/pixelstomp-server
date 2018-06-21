@@ -12,8 +12,7 @@ var pixelServer = http.createServer(function (request, response) {
     var reqUrl = url.parse(request.url, true);
     var path = reqUrl.pathname;
     var queries = reqUrl.query;
-
-    console.log('response variable:', response);
+    
     response.setHeader('Access-Control-Allow-Origin', '*');
 
     switch (path)
