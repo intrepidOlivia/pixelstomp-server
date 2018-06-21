@@ -13,7 +13,7 @@ var pixelServer = http.createServer(function (request, response) {
     var path = reqUrl.pathname;
     var queries = reqUrl.query;
 
-
+    console.log('response variable:', response);
     response.setHeader('Access-Control-Allow-Origin', '*');
 
     switch (path)
@@ -74,8 +74,6 @@ var pixelServer = http.createServer(function (request, response) {
         default:
             response = Serve404(request, response);
     }
-
-    response.setHeader('Access-Control-Allow-Origin', '*');
 });
 pixelServer.listen(8080, function () {
     console.log('pixelServer listening on port 8080.');
