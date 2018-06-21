@@ -13,7 +13,11 @@ var pixelServer = http.createServer(function (request, response) {
     var path = reqUrl.pathname;
     var queries = reqUrl.query;
 
-    switch (path) {
+
+    response.setHeader('Access-Control-Allow-Origin', '*');
+
+    switch (path)
+    {
         case '/friendly-radius/twitter-authenticate.js':
             response = ServePage(request, response);
             break;
