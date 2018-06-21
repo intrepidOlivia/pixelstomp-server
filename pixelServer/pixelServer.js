@@ -64,7 +64,6 @@ var pixelServer = http.createServer(function (request, response) {
             break;
 
         case '/reddit/redditor':
-            console.log('Getting redditor info..');
             getRedditorInfo(queries.user, response);
             break;
 
@@ -101,7 +100,8 @@ function generateWordCloud(user, response) {
 function getRedditorInfo(user, response) {
     let reddit = require('./reddit-module');
     reddit.searchForRedditor(user, function (result) {
-
+        response.write(result);
+        response.end();
     });
 }
 
