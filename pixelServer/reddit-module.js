@@ -12,6 +12,9 @@ let queuedArgs = [];   // Queued paths to query after another bearer token is re
 let after = '';
 let before = '';
 
+// REDDIT ACCESS FUNCTIONS
+// -----------------------
+
 function retrieveAccessToken(callback) {
     let https = require('https');
     let options = {
@@ -124,6 +127,15 @@ function parseResponse(response) {
         });
     });
 }
+
+// REDDIT QUERY FUNCTIONS
+// ---------------------
+
+exports.searchForRedditor = function(username, callback) {
+    makeAuthorizedRequest(`/user/${username}/about`, function (result) {
+        console.log('user search result:', result);
+    });
+};
 
 exports.getAllComments = function(username, callback) {
     //send the request to retrieve the first page of comments

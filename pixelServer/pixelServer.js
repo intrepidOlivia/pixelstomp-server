@@ -65,6 +65,10 @@ var pixelServer = http.createServer(function (request, response)
             generateWordCloud(queries.user, response);
             break;
 
+        case '/reddit/redditor':
+            getRedditorInfo(queries.user, response);
+            break;
+
         default:
         response = Serve404(request, response);
     }
@@ -88,6 +92,14 @@ function generateWordCloud(user, response) {
     let reddit = require('./reddit-module');
     reddit.getAllComments(user, function (result) {
         // Add word cloud stuff here
+    });
+}
+
+function getRedditorInfo(user, response) {
+    let reddit = require('./reddit-module');
+    reddit.searchForRedditor(user, function (result) {
+        response.write(JSON.stringify(result));
+        response.end();
     });
 }
 
