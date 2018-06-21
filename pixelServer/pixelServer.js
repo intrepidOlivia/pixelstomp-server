@@ -7,12 +7,12 @@ var geocoding = require('./geocoding-module');
 var pixelServer = http.createServer(function (request, response) {
     //Parse the url and figure out its bits from that
     var url = require('url');
-    //console.log("Request was received from " + request.headers.referer + ": " + request.url);
+    console.log("Request was received from " + request.headers.referer + ": " + request.url);
 
     var reqUrl = url.parse(request.url, true);
     var path = reqUrl.pathname;
     var queries = reqUrl.query;
-    
+
     response.setHeader('Access-Control-Allow-Origin', '*');
 
     switch (path)
@@ -64,7 +64,9 @@ var pixelServer = http.createServer(function (request, response) {
             break;
 
         case '/reddit/redditor':
+            console.log('Getting redditor info..');
             getRedditorInfo(queries.user, response);
+            break;
 
         case '/reddit/track_votes':
             trackRedditComments(queries.subreddit, queries.id, response);
