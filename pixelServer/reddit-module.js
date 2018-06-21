@@ -4,6 +4,17 @@ let APP_ID = require('./reddit-config').getPixelstompAppKey();
 let APP_SECRET = require('./reddit-config').getPixelstompAppSecret();
 let USER_AGENT = 'pixelstomp-reddit-querier by poplopo';
 
+// REDDIT CONSTANTS
+var types = {
+    COMMENT: 't1',
+    ACCOUNT: 't2',
+    LINK: 't3',
+    MESSAGE: 't4',
+    SUBREDDIT: 't5',
+    AWARD: 't6'
+};
+
+
 // Live values
 let requestID = null;   // Shall be the timestamp, in seconds, that an access token was most recently requested.
 let expiry = null;      // Shall be the timestamp, in seconds, that the current access token will expire.
@@ -54,6 +65,9 @@ function retrieveAccessToken(callback) {
     request.end();
 }
 
+/**
+ * When provided with an appropriate path, sends the API result to the callback.
+ */
 function makeAuthorizedRequest(path, callback) {
     // First check to make sure there is an access token and it is still valid
     if (!bearerToken) {
@@ -157,7 +171,7 @@ exports.getAllComments = function(username, callback) {
         let commentSet = gatherComments(result);
 
         if (result.data.after) {
-            getNextPage(path, result.data.after, commentSet, commentSet.length)
+            getNextUserCommentsPage(path, result.data.after, commentSet, commentSet.length)
                 .then((fullCommentSet) => {
                     // Do something with the full array
                     callback(fullCommentSet);
@@ -169,6 +183,30 @@ exports.getAllComments = function(username, callback) {
             // Do something with the full array
             callback(commentSet);
         }
+    });
+}
+
+exports.getPost = function (subreddit, id, callback) {
+    let path = `/r/${subreddit}/comments/${id}`
+    makeAuthorizedRequest(path, function (result) {
+        // The result of this call is an array of objects. The first object in the array (index 0) is information about the post itself.
+        // The second object in the array (index 1) is information about the comments.
+        if (result.error) {
+            callback(result);
+        }
+
+        callback({
+            // This will currently retrieve all root-level comments in the post
+            comments: result[1] ? result[1].data.children : [],
+            link: result[0].data.children[0]
+        });
+    });
+}
+
+exports.getTrackedVotes = function (subreddit, id, callback) {
+    this.getPost(subreddit, id, function (result) {
+        trackVoteRhythm(result);
+        callback('Votes started to track.');
     });
 }
 
@@ -186,20 +224,14 @@ function gatherComments(result) {
     return commentSet;
 }
 
-/**
- *
- * @param path
- * @param after
- * @param commentSet
- * @param count
- * @returns {Promise<any>}
- */
-function getNextPage(path, after, commentSet, count) {
+// Gets next user comments
+function getNextUserCommentsPage(path, after, commentSet, count) {
+    // TODO: Refactor these functions to use something more generic?
     return new Promise(function (resolve, reject) {
         makeAuthorizedRequest(`${path}?after=${after}&count=${count}`, function (result) {
             commentSet = commentSet.concat(gatherComments(result));
             if (result.data.after) {
-                getNextPage(path, result.data.after, commentSet, commentSet.length)
+                getNextUserCommentsPage(path, result.data.after, commentSet, commentSet.length)
                     .then((fullCommentSet) => {
                         resolve(fullCommentSet);
                     })
@@ -212,4 +244,35 @@ function getNextPage(path, after, commentSet, count) {
             }
         });
     });
+}
+
+// Gets next comments in a post
+function getNextComments(path, after, comments) {
+    return new Promise(function (resolve, reject) {
+        makeAuthorizedRequest(`${path}?after=${after}`, function (result) {
+            comments = comments.concat(result[1].data.children);
+            if (result.data.after) {
+                getNextComments(path, result.data.after, comments)
+                    .then((fullComments) => {
+                        resolve(fullComments);
+                    })
+                    .catch(e => {
+                        reject(e);
+                    });
+            } else {
+                resolve(comments);
+            }
+        });
+    });
+}
+
+function trackVoteRhythm(post) {
+    // Watch a post's comment section and register each new comment.
+
+    // Register each comment in a vote tabulator structure
+
+    let Tabulator = require('../redditUtils/vote-tabulator');
+    let voteTracker = new Tabulator(post);
+    console.log('vote Tracker initialized:', voteTracker);
+
 }
