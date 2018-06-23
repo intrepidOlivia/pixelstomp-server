@@ -78,6 +78,8 @@ function makeAuthorizedRequest(path, callback) {
         return;
     }
 
+    console.log('expiry:', expiry);
+    console.log('current seconds:', new Date().getSeconds());
     if (expiry <= new Date().getSeconds()) {
         console.log('Request initiated but bearer token was expired. Requesting new bearer token.');
         queuedArgs.push(path);
