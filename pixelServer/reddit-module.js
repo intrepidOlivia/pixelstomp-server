@@ -267,6 +267,16 @@ function getNextComments(path, after, comments) {
     });
 }
 
+exports.getSubredditorsInfo = function (subreddit, callback) {
+    // Retrieve list of (most active?) users
+
+    // for each user, find 10 subreddits they are the most active on
+
+    // create count map for each subreddit
+
+    // send back 25 most popular subreddits
+}
+
 function trackVoteRhythm(post) {
     // Watch a post's comment section and register each new comment.
 
