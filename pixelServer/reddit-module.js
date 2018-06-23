@@ -87,6 +87,7 @@ function makeAuthorizedRequest(path, callback) {
     }
 
     if (!path) {
+        console.log('shifting queued args.');
         path = queuedArgs.shift();
     }
 
