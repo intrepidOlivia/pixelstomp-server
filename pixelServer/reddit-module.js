@@ -147,7 +147,9 @@ function parseResponse(response) {
 // ---------------------
 
 exports.searchForRedditor = function(username, callback) {
+    console.log('searching for redditor:', username);
     makeAuthorizedRequest(`/user/${username}/about`, function (result) {
+        console.log('found redditor result,', result);
         callback(JSON.stringify(result));
     });
 };

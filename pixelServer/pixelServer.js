@@ -100,6 +100,7 @@ function generateWordCloud(user, response) {
 function getRedditorInfo(user, response) {
     let reddit = require('./reddit-module');
     reddit.searchForRedditor(user, function (result) {
+        console.log('writing response with result:', result);
         response.write(result);
         response.end();
     });
