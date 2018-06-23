@@ -47,7 +47,7 @@ function retrieveAccessToken(callback) {
             parseResponse(response)
                 .then((result) => {
                     bearerToken = result.access_token || null;
-                    setTimer(result.expires_in || Date.now() * 1000);
+                    setTimer(result.expires_in || Date.now() / 1000);
                     callback && callback(queuedArgs.shift(), queuedArgs.shift());
                     console.log('Request for bearer token complete. Bearer token has a current value of:', bearerToken);
                 })
@@ -77,10 +77,8 @@ function makeAuthorizedRequest(path, callback) {
         retrieveAccessToken(makeAuthorizedRequest);
         return;
     }
-
-    console.log('expiry:', expiry);
-    console.log('current seconds:', Date.now() * 1000);
-    if (expiry <= Date.now() * 1000) {
+    
+    if (expiry <= Date.now() / 1000) {
         console.log('Request initiated but bearer token was expired. Requesting new bearer token.');
         queuedArgs.push(path);
         queuedArgs.push(callback);
@@ -118,7 +116,7 @@ function makeAuthorizedRequest(path, callback) {
 
 // Populates requestID with the time the access key was requested.
 function setTime() {
-    requestID = Date.now() * 1000;
+    requestID = Date.now() / 1000;
     return requestID;
 }
 
