@@ -218,7 +218,7 @@ function gatherComments(result) {
         commentSet.push({
             body: comment.data.body,
             subreddit: comment.data.subreddit_id,
-            permalink: comment.data.link_permalink,
+            permalink: `https://www.reddit.com${comment.data.permalink}`,
             created: comment.data.created
         });
     });
