@@ -77,7 +77,7 @@ function makeAuthorizedRequest(path, callback) {
         retrieveAccessToken(makeAuthorizedRequest);
         return;
     }
-    
+
     if (expiry <= Date.now() / 1000) {
         console.log('Request initiated but bearer token was expired. Requesting new bearer token.');
         queuedArgs.push(path);
@@ -108,6 +108,53 @@ function makeAuthorizedRequest(path, callback) {
                 callback(result);
             });
     });
+    request.on('error', function (err) {
+        throw err;
+    });
+    request.end();
+}
+
+function postAuthorizedRequest(path, callback, postQuery) {
+    // TODO: Consolidate duplicated code into one method
+    if (!bearerToken) {
+        console.log('Request initiated but no bearer token was found. Requesting bearer token.');
+        queuedArgs.push(path);
+        queuedArgs.push(callback);
+        retrieveAccessToken(makeAuthorizedRequest);
+        return;
+    }
+
+    if (expiry <= Date.now() / 1000) {
+        console.log('Request initiated but bearer token was expired. Requesting new bearer token.');
+        queuedArgs.push(path);
+        queuedArgs.push(callback);
+        retrieveAccessToken(makeAuthorizedRequest);
+        return;
+    }
+
+    if (!path) {
+        console.log('shifting queued args.');
+        path = queuedArgs.shift();
+    }
+
+    let https = require('https');
+    let options = {
+        method: 'POST',
+        host: 'oauth.reddit.com',
+        path: path,
+        headers: {
+            'Authorization': `bearer ${bearerToken}`,
+            'User-Agent': USER_AGENT
+        }
+    };
+    let request = https.request(options, function (response) {
+        response.setEncoding('utf8');
+        parseResponse(response)
+            .then((result) => {
+                callback(result);
+            });
+    });
+    postQuery && request.write(postQuery);
     request.on('error', function (err) {
         throw err;
     });
@@ -219,7 +266,7 @@ function gatherComments(result) {
     result.data.children && result.data.children.forEach((comment) => {
         commentSet.push({
             body: comment.data.body,
-            subreddit: comment.data.subreddit_id,
+            subreddit: comment.data.subreddit,
             permalink: `https://www.reddit.com${comment.data.permalink}`,
             created: comment.data.created
         });
@@ -269,14 +316,66 @@ function getNextComments(path, after, comments) {
     });
 }
 
-exports.getSubredditorsInfo = function (subreddit, callback) {
-    // Retrieve list of (most active?) users
+function getRecentComments(username) {
+    return new Promise(function (resolve, reject) {
+        makeAuthorizedRequest(`/user/${username}/comments`, function (result) {
+            resolve(gatherComments(result));
+        });
+    });
+}
 
-    // for each user, find 10 subreddits they are the most active on
+// exports.getSubredditorsInfo = function (subreddit) {
+function getSubredditorsInfo (subreddit, callback) {
+    getSubredditIntersections(subreddit)
+        .then((subMap) => {
+            let subArray = Object.keys(subMap).sort(function (a, b) {
+                return subMap[b] - subMap[a];
+            });
+            callback(subArray.map((sub) => {
+                return {
+                    subreddit: sub,
+                    count: subMap[sub]
+                };
+            }));
+            // callback(subArray);
+        });
 
-    // create count map for each subreddit
+    // send back 15 most popular subreddits
+}
 
-    // send back 25 most popular subreddits
+function getSubredditIntersections(subreddit) {
+    return new Promise(function (resolve, reject) {
+        // Retrieve list of "hot" posts right now
+        let posts = [];
+        let subredditMap = {};
+        makeAuthorizedRequest('/r/asmr/hot', function (result) {
+            let counter = 0;
+            posts = result.data.children;
+            posts.forEach((post, index) => {
+                // retrieve redditor
+                let redditor = post.data.author;
+                counter++;
+
+                // get user's most popular subreddits
+                getRecentComments(redditor)
+                    .then(comments => {
+                        counter--;
+                        comments.forEach((comment) => {
+                            if (comment.subreddit == subreddit) {
+                                return;
+                            }
+                            subredditMap[comment.subreddit] = subredditMap[comment.subreddit] ? subredditMap[comment.subreddit] + 1 : 1;
+                        });
+
+                        if (counter == 0) {
+                            resolve(subredditMap);
+                        }
+                    });
+
+
+            });
+        });
+    });
 }
 
 function trackVoteRhythm(post) {
