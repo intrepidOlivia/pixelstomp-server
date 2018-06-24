@@ -338,6 +338,9 @@ exports.getSubredditorsInfo = function (subreddit, callback) {
                 };
             }));
             // callback(subArray);
+        })
+        .catch((e) => {
+            callback(e);
         });
 
     // send back 15 most popular subreddits
@@ -349,6 +352,10 @@ function getSubredditIntersections(subreddit) {
         let posts = [];
         let subredditMap = {};
         makeAuthorizedRequest(`/r/${subreddit}/hot`, function (result) {
+            if (!result.data.children) {
+                reject({result});
+            }
+
             let counter = 0;
             posts = result.data.children;
             posts.forEach((post, index) => {
@@ -361,7 +368,7 @@ function getSubredditIntersections(subreddit) {
                     .then(comments => {
                         counter--;
                         comments.forEach((comment) => {
-                            if (comment.subreddit == subreddit) {
+                            if (comment.subreddit.toUpperCase() == subreddit.toUpperCase()) {
                                 return;
                             }
                             subredditMap[comment.subreddit] = subredditMap[comment.subreddit] ? subredditMap[comment.subreddit] + 1 : 1;
