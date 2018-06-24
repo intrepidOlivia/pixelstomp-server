@@ -348,7 +348,7 @@ function getSubredditIntersections(subreddit) {
         // Retrieve list of "hot" posts right now
         let posts = [];
         let subredditMap = {};
-        makeAuthorizedRequest('/r/asmr/hot', function (result) {
+        makeAuthorizedRequest(`/r/${subreddit}/hot`, function (result) {
             let counter = 0;
             posts = result.data.children;
             posts.forEach((post, index) => {
