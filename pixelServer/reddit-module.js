@@ -357,8 +357,8 @@ function getSubredditIntersections(subreddit) {
             }
 
             let counter = 0;
-            console.log('result:', result);
             posts = result.data.children;
+            console.log('posts found:', posts);
             posts.forEach((post, index) => {
                 // retrieve redditor
                 let redditor = post.data.author;
