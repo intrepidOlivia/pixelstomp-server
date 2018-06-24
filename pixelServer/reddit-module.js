@@ -263,7 +263,11 @@ exports.getTrackedVotes = function (subreddit, id, callback) {
 function gatherComments(result) {
     let commentSet = [];
     // hold all the comments in an array of strings.
-    console.log('result of gatherComments:', result);
+    if (result.message) {
+        console.log('result of gatherComments:', result);
+        return commentSet;
+    }
+
     result.data.children && result.data.children.forEach((comment) => {
         commentSet.push({
             body: comment.data.body,
