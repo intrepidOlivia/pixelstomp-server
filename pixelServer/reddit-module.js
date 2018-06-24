@@ -324,8 +324,8 @@ function getRecentComments(username) {
     });
 }
 
-// exports.getSubredditorsInfo = function (subreddit) {
-function getSubredditorsInfo (subreddit, callback) {
+exports.getSubredditorsInfo = function (subreddit, callback) {
+// function getSubredditorsInfo (subreddit, callback) {
     getSubredditIntersections(subreddit)
         .then((subMap) => {
             let subArray = Object.keys(subMap).sort(function (a, b) {
