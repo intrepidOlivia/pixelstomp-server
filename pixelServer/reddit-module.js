@@ -263,6 +263,7 @@ exports.getTrackedVotes = function (subreddit, id, callback) {
 function gatherComments(result) {
     let commentSet = [];
     // hold all the comments in an array of strings.
+    console.log('result of gatherComments:', result);
     result.data.children && result.data.children.forEach((comment) => {
         commentSet.push({
             body: comment.data.body,
@@ -358,7 +359,6 @@ function getSubredditIntersections(subreddit) {
 
             let counter = 0;
             posts = result.data.children;
-            console.log('posts found:', posts);
             posts.forEach((post, index) => {
                 // retrieve redditor
                 let redditor = post.data.author;
