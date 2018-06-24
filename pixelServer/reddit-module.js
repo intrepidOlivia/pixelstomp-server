@@ -352,7 +352,7 @@ function getSubredditIntersections(subreddit) {
         let posts = [];
         let subredditMap = {};
         makeAuthorizedRequest(`/r/${subreddit}/hot`, function (result) {
-            if (!result.data.children) {
+            if (!result.data || !result.data.children) {
                 reject({result});
             }
 
