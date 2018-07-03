@@ -75,6 +75,10 @@ var pixelServer = http.createServer(function (request, response) {
             getSubredditIntersection(queries.subreddit, response);
             break;
 
+        case '/reddit/post/comments':
+            getPostComments(queries.subreddit, queries.id, response);
+            break;
+
         default:
             response = Serve404(request, response);
     }
@@ -121,6 +125,14 @@ function trackRedditComments(subreddit, postID, response) {
 function getSubredditIntersection(subreddit, response) {
     let reddit = require('./reddit-module');
     reddit.getSubredditorsInfo(subreddit, function (result) {
+        response.write(JSON.stringify(result));
+        response.end();
+    });
+}
+
+function getPostComments(subreddit, postID, response) {
+    let reddit = require('./reddit-module');
+    reddit.getAllPostComments(subreddit, postID, function (result) {
         response.write(JSON.stringify(result));
         response.end();
     });

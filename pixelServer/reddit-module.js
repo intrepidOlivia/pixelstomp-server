@@ -196,7 +196,6 @@ function parseResponse(response) {
 exports.searchForRedditor = function(username, callback) {
     console.log('searching for redditor:', username);
     makeAuthorizedRequest(`/user/${username}/about`, function (result) {
-        console.log('found redditor result,', result);
         callback(JSON.stringify(result));
     });
 };
@@ -399,4 +398,34 @@ function trackVoteRhythm(post) {
     let voteTracker = new Tabulator(post);
     console.log('vote Tracker initialized:', voteTracker);
 
+}
+
+exports.getAllPostComments = function(subreddit, postID, callback) {
+    let allComments = [];
+    makeAuthorizedRequest(`/r/${subreddit}/comments/${postID}`, function (result) {
+        let rootComments = result[1];
+        rootComments.data.children.forEach((comment) => {
+            let thread = [];
+            thread.push(comment.data.body);
+            thread = thread.concat(getAllReplies(comment));
+            allComments.push(thread);
+        });
+        callback(allComments);
+    });
+}
+
+getAllReplies = function(comment) {
+    let replies = [];
+    if (comment.kind !== 't1') {
+        return replies;
+    }
+
+    if (typeof comment.data.replies == 'object') {
+        comment.data.replies.data.children.forEach((reply) => {
+            replies.push(reply.data.body);
+
+            replies = replies.concat(getAllReplies(reply))
+        });
+    }
+    return replies;
 }
