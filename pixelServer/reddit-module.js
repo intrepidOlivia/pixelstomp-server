@@ -423,8 +423,9 @@ getAllReplies = function(comment) {
     if (typeof comment.data.replies == 'object') {
         comment.data.replies.data.children.forEach((reply) => {
             if (!reply.data.body) {
-                console.log('empty reply:', reply);
+                return;
             }
+
             replies.push(reply.data.body);
 
             replies = replies.concat(getAllReplies(reply))
