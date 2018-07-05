@@ -2,6 +2,7 @@ exports.RetrieveFriends = function (token, username, callback) {
     if (token == null)
     {
         callback('Bearer Token was not initialized for Twitter authentication. Most likely the server\'s author has made an error. Please try again or contact the administrator for assistance.');
+        // TODO: Get authorization if not currently authorized, similar to reddit-module's authentication
     }
 
     //Make a call to the Twitter API to retrieve a list of the user's friends

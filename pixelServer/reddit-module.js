@@ -1,7 +1,7 @@
 // Constants
 let REDIRECT = 'http://pixelstomp.com/apps/reddit_lookup_utility/lookup.html';
-let APP_ID = require('./reddit-config').getPixelstompAppKey();
-let APP_SECRET = require('./reddit-config').getPixelstompAppSecret();
+let APP_ID = require('./reddit-config').getAppKey();
+let APP_SECRET = require('./reddit-config').getAppSecret();
 let USER_AGENT = 'pixelstomp-reddit-querier by poplopo';
 
 // REDDIT CONSTANTS
@@ -400,9 +400,9 @@ function trackVoteRhythm(post) {
 
 }
 
-exports.getAllPostComments = function(subreddit, postID, callback) {
+exports.getAllPostComments = function(subreddit, id, callback) {
     let allComments = [];
-    makeAuthorizedRequest(`/r/${subreddit}/comments/${postID}`, function (result) {
+    makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
         let rootComments = result[1];
         rootComments.data.children.forEach((comment) => {
             let thread = [];
