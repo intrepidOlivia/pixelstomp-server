@@ -416,6 +416,7 @@ exports.getAllPostComments = function(subreddit, id, callback) {
 
 getAllReplies = function(comment) {
     let replies = [];
+    let moreChildren = [];
     if (comment.kind !== 't1') {
         return replies;
     }
@@ -423,7 +424,10 @@ getAllReplies = function(comment) {
     if (typeof comment.data.replies == 'object') {
         comment.data.replies.data.children.forEach((reply) => {
             if (!reply.data.body) {
-                return;
+                // add any additional children to more children to retrieve
+                reply.data.children && reply.data.children.forEach((id) => {
+                    moreChildren.push(id);
+                });
             }
 
             replies.push(reply.data.body);
@@ -432,4 +436,21 @@ getAllReplies = function(comment) {
         });
     }
     return replies;
+}
+
+getMoreChildren = function(link, ids) {
+    return new Promise(function (resolve, reject) {
+        if (ids.length > 100) {
+            // do something else
+            reject();
+        }
+        let idstring = '';
+        ids.forEach((id) => {
+            idstring += `${id},`;
+        });
+        makeAuthorizedRequest(`/api/morechildren?link_id=${link}&children=${idstring}`, function (result) {
+            console.log(result);
+        });
+    });
+
 }
