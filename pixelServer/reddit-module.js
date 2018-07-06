@@ -406,7 +406,14 @@ exports.getAllPostComments = function(subreddit, id, callback) {
         let rootComments = result[1];
         rootComments.data.children.forEach((comment) => {
             let thread = [];
-            thread.push(comment.data.body);
+            thread.push({
+                body: comment.data.body,
+                id: comment.data.id,
+                author: comment.data.author,
+                score: comment.data.score,
+                permalink: `https://www.reddit.com/${comment.data.permalink}`,
+                created: comment.data.created
+            });
             thread = thread.concat(getAllReplies(comment));
             allComments.push(thread);
         });
@@ -430,14 +437,31 @@ getAllReplies = function(comment) {
                 });
             }
 
-            replies.push(reply.data.body);
+            replies.push({
+                body: reply.data.body,
+                id: reply.data.id,
+                author: reply.data.author,
+                score: reply.data.score,
+                permalink: `https://www.reddit.com/${reply.data.permalink}`,
+                created: reply.data.created
+            });
 
             replies = replies.concat(getAllReplies(reply))
         });
     }
+
+    // TODO: Figure out how to implement this later
+    // if(moreChildren.length > 0) {
+    //     console.log('children not retrieved:', moreChildren);
+    // }
     return replies;
 }
 
+/**
+ * @param {string} link  The fullname of a post
+ * @param {array} ids   Strings of ID36's comment
+ * @returns {Promise<any>} Resolves with an array of comment objects retrieved from the reddit API.
+ */
 getMoreChildren = function(link, ids) {
     return new Promise(function (resolve, reject) {
         if (ids.length > 100) {
@@ -445,11 +469,24 @@ getMoreChildren = function(link, ids) {
             reject();
         }
         let idstring = '';
-        ids.forEach((id) => {
-            idstring += `${id},`;
+        ids.forEach((id, index) => {
+            idstring += `${id}`;
+            idstring += index === ids.length - 1 ? '' : ',';
         });
         makeAuthorizedRequest(`/api/morechildren?link_id=${link}&children=${idstring}`, function (result) {
-            console.log(result);
+            if (result.jquery) {
+                result.jquery.forEach((item) => {
+                    // console.log(item);
+                    if (item[0] == 10) {
+                        console.log(item[3]);
+                        let commentArray = item[3][0];
+                        resolve(commentArray);
+                    }
+                });
+            } else {
+                console.log('An error occurred:', result);
+                reject(result);
+            }
         });
     });
 
