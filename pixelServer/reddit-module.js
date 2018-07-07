@@ -405,6 +405,12 @@ exports.getAllPostComments = function(subreddit, id, callback) {
     makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
         let rootComments = result[1];
         rootComments.data.children.forEach((comment) => {
+
+            if (comment.kind == 'more') {
+                // handle a moreChildren scenario
+                return;
+            }
+
             let thread = [];
             thread.push({
                 body: comment.data.body,
@@ -436,11 +442,6 @@ getAllReplies = function(comment) {
                     moreChildren.push(id);
                 });
                 return;
-            }
-
-            // TEMPORARY
-            if (!reply.data.body) {
-                console.log('reply error:', reply);
             }
 
             replies.push({
