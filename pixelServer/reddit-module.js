@@ -430,11 +430,12 @@ getAllReplies = function(comment) {
 
     if (typeof comment.data.replies == 'object') {
         comment.data.replies.data.children.forEach((reply) => {
-            if (!reply.data.body) {
+            if (reply.kind == 'more') {
                 // add any additional children to more children to retrieve
                 reply.data.children && reply.data.children.forEach((id) => {
                     moreChildren.push(id);
                 });
+                return;
             }
 
             // TEMPORARY
