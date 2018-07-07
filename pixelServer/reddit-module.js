@@ -437,6 +437,11 @@ getAllReplies = function(comment) {
                 });
             }
 
+            // TEMPORARY
+            if (!reply.data.body) {
+                console.log('reply error:', reply);
+            }
+
             replies.push({
                 body: reply.data.body,
                 id: reply.data.id,
