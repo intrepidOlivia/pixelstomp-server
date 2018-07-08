@@ -71,19 +71,6 @@ function requestTwitterUser(username, response) {
     console.log(new Date().toUTCString() + "> Initiated request on twitter user " + username);
     let twitter = require('./twitter-module');
     twitter.RetrieveTwitterUser(username, function (result) {
-        response.write(result);
-        response.end();
-    });
-}
-
-/**
- * @param {string} ids a string of twitter user id's, separated by commas.
- * @param {IncomingMessage} response
- */
-function requestBatchUsers(ids, response) {
-    console.log(new Date().toUTCString() + "> Initiated request for friends of twitter user " + username);
-    let twitter = require('./twitter-module');
-    twitter.RetrieveBatchUsers([], function (result) {
         response.write(JSON.stringify(result));
         response.end();
     });
