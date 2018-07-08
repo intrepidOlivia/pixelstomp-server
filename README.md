@@ -15,23 +15,13 @@ Note: Use of this module currently requires that a module called `environment.js
 
 ### API:
 
-`GetTwitterToken(callback)`: Retrieves a temporary authorization token to be used in subsequent calls to the Twitter API.
-* callback {function}: Is passed in a single argument, the authorized bearer token as a string.
-
-`RetrieveFriends(token, username, callback)`: Retrieves a list of friends for the provided user (accounts that that user follows).
-* token {string}: Authorization token retrieved via `GetTwitterToken`.
+`RetrieveFriends(username, callback)`: Retrieves a list of friends for the provided user (accounts that that user follows).
 * username {string}: The username of a twitter account.
 * callback {function}: Is passed in a single argument, an array of objects with the following structure: {screen_name: (string), location: (string), url: (string)}
 
-`RetrieveTwitterUser(token, username, callback)`: Retrieves information for a single Twitter account.
-* token {string}: Authorization token retrieved via `GetTwitterToken`.
+`RetrieveTwitterUser(username, callback)`: Retrieves information for a single Twitter account.
 * username {string}: The username of a twitter account.
-* callback {function}: Is passed in a single argument, a stringified object containing information about the requested Twitter user.
-
-`RetrieveBatchUsers(token, ids, callback)`: Retrieves information for a large number of twitter accounts, using a delay system to mitigate Twitter API rate-limiting.
-* token {string}: Authorization token retrieved via `GetTwitterToken`.
-* ids {array of strings}: Twitter account usernames.
-* callback {function}: Is passed in an array of stringified objects containing information for each twitter user found.
+* callback {function}: Is passed in a single argument, an object containing information about the requested Twitter user.
 
 # reddit-lookup
 A redditor search engine. search by a variety of patterns, sectioned off by scope. Try it out here: http://pixelstomp.com/apps/reddit_lookup_utility/lookup.html
