@@ -1,303 +1,209 @@
-exports.RetrieveFriends = function (token, username, callback) {
-    if (token == null)
-    {
-        callback('Bearer Token was not initialized for Twitter authentication. Most likely the server\'s author has made an error. Please try again or contact the administrator for assistance.');
-        // TODO: Get authorization if not currently authorized, similar to reddit-module's authentication
-    }
+// temporary
+// const exports = {};
 
-    //Make a call to the Twitter API to retrieve a list of the user's friends
-    var https = require('https');
-    var options = {
-        'method': 'GET',
-        'host': 'api.twitter.com',
-        'path': '/1.1/friends/ids.json?screen_name=' + username,
-        'headers': {
-            'Authorization': 'Bearer ' + token
-        }
-    };
+// Initialization
+let appkey = require('./environment').getTwitterKey();  // Retrieves application-only key from config
+let bearerToken = null;     // Authentication token
+let queuedArgs = [];        // Queued paths to query after another bearer token is retrieved.
 
-    var request = https.request(options, function (response) {
-        response.setEncoding('utf8');
-        if (response.statusCode == 200)
-        {
-            var result = '';
-            response.on('data', function (chunk) {
-                result +=chunk;
+// TWITTER API REQUESTS
+// --------------------
+
+exports.RetrieveFriends = function (username, callback) {
+    makeAuthorizedGet(`/1.1/friends/ids.json?screen_name=${username}`, function (result) {
+        RetrieveBatchUsers(result.ids, function (users) {
+            let accounts = users.map((user) => {
+                return {
+                    screen_name: user.screen_name,
+                    location: user.location,
+                    url: `http://www.twitter.com/${user.screen_name}`
+                };
             });
-            response.on('end', function () {
-
-                //Parse list of ID's
-                var objResult = JSON.parse(result);
-                exports.RetrieveBatchUsers(token, objResult.ids, function (result) {
-                    //At this point, result is an array of strings containing an array of "fully-hydrated" user objects.
-                    //we need to find which users have locations, and isolate them.
-
-                    var locUsers = new Array();
-
-                    for (i = 0; i < result.length; i++)
-                    {
-                        
-                        var users = JSON.parse(result[i]);
-                        //Isolate only users that have a location listed
-                        for (j = 0; j < users.length; j++)
-                        {
-                            if (users[j].location.length > 0)
-                            {
-                                var userObj = new Object();
-                                userObj.screen_name = users[j].screen_name;
-                                userObj.location = users[j].location;
-                                userObj.url = 'http://www.twitter.com/' + users[j].screen_name;
-                                locUsers.push(userObj);
-                            }
-                        }
-                    }
-
-                    callback(JSON.stringify(locUsers));
-                });
-
-                //TODO: Include pagination for more than 5000 friends
-                //if next_cursor != 0...
-
-            });
-        }
+            callback(accounts);
+        });
     });
-    request.on('error', function (err) {
-        console.log('RetrieveFriends has encountered the following error: ' + err.message);
-        callback('');
-    });
-    request.end();
 
+    // TODO: Include pagination for more than 5000 friends
 };
 
-///ids should be an array of id numbers
-exports.RetrieveBatchUsers = function (token, ids, callback) {
-    var users = '';
-    var resultsArray = new Array();
-    var queue = new Array();
-    var idstring = '';
-    var idcount = 0;
+/**
+ * Uses a post request to retrieve a whole bunch of users at once
+ * @param {array} ids           an array of id numbers (strings)
+ * @param {function} callback   Is passed in an array of user objects
+ */
+RetrieveBatchUsers = function (ids, callback) {
+    let users = '';
+    let resultsArray = new Array();
+    let pathQueue = new Array();
+    let idstring = '';
+    let idcount = 0;
 
-    for (id in ids)
-    {
-        idstring += ids[id] + ',';
+    ids.forEach((id) => {
+        idstring += `${id},`;
         idcount++;
-        if (idcount >= 50)
-        {
-            var pathstring = '/1.1/users/lookup.json?user_id=' + idstring;
-            queue.push(pathstring);
+
+        if (idcount >= 50) {
+            let pathstring = '/1.1/users/lookup.json?user_id=' + idstring;
+            pathQueue.push(pathstring);
             idstring = '';
-            idcount = 0;   
+            idcount = 0;
         }
-    }
+    });
 
 	//The if statement provides for multiples of 50.
-	if (idstring != '')
-	{
-	    var pathstring = '/1.1/users/lookup.json?user_id=' + idstring;
-	    queue.push(pathstring);
+	if (idstring.length > 0) {
+	    let pathstring = '/1.1/users/lookup.json?user_id=' + idstring;
+	    pathQueue.push(pathstring);
 	}
 
-    count = 0;
-    for (p in queue)
-    {
-        count += 1;
-        PerformPostRequest(token, queue[p], function (result) {
-            resultsArray.push(result);      //Creates an array of [strings representing an array of objects]
-            count -= 1;
-
-            if (count == 0)
-            {
+    let count = 0;
+    pathQueue.forEach((path) => {
+        count++;
+        makeAuthorizedPost({path: path}, function (result) {
+            resultsArray = resultsArray.concat(result);
+            count--;
+            if (count <= 0) {
                 callback(resultsArray);
             }
+        });
+    });
+};
 
-        });            
+exports.RetrieveTwitterUser = function (username, callback) {
+    console.log(new Date().toUTCString() + "> Requesting information from Twitter for user " + username);
+    makeAuthorizedGet(`/1.1/users/show.json?screen_name=${encodeURIComponent(username.trim())}`, callback);
+};
+
+// UTILITY FUNCTIONS
+// ----------------
+
+function makeAuthorizedGet (path, callback) {
+    if (!bearerToken) {
+        queuedArgs.push(path, callback);
+        getTwitterToken(makeAuthorizedGet);
+        return;
     }
 
-}
+    let https = require('https');
+    let options =  {
+        method: 'GET',
+        host: 'api.twitter.com',
+        path: path,
+        headers: {
+            Authorization: `Bearer ${bearerToken}`
+        }
+    }
 
-//Performs a POST request with the provided path
-function PerformPostRequest(token, path, callback)
-{
-    var https = require('https');
-    var options = {
+    let request = https.request(options, function (response) {
+        if (response.statusCode !== 200) {
+            throw new Error (`A status code of ${response.statusCode} was received from Twitter.`);
+        }
+        parseResponse(response, function (result) {
+            callback(result);
+        });
+    });
+    request.on('error', function (err) {
+        throw new Error(`makeAuthorizedGet has encountered the following error: ${err.message}`);
+    });
+    request.end();
+};
+
+/**
+ * @param {object} postInfo an object with the following structure: { path:string, postData:string }
+ * @param {function} callback  will be passed in the result of the post request
+ */
+function makeAuthorizedPost (postInfo, callback) {
+    if (!bearerToken) {
+        queuedArgs.push(postInfo, callback);
+        getTwitterToken(makeAuthorizedPost)
+        return;
+    }
+
+    let https = require('https');
+    let options = {
         'method': 'POST',
         'host': 'api.twitter.com',
-        'path': path,
+        'path': postInfo.path,
         'headers': {
-            'Authorization': 'Bearer ' + token
+            'Authorization': `Bearer ${bearerToken}`
         }
     };
-    var request = https.request(options, function (response) {
-        if (response.statusCode == 200)
-        {
-            response.setEncoding('utf8');
-            var result = '';
-            response.on('data', function (chunk) {
-                result += chunk;
-            });
-            response.on('end', function (){
-                callback(result);
-            });
+    let request = https.request(options, function (response) {
+        if (response.statusCode !== 200) {
+            throw new Error(`A status code of ${response.statusCode} was received from Twitter.`);
         }
-        else
-        {
-            console.log('The following status code was received from the server: ' + response.statusCode + response.statusMessage);
-		console.log('The following path had been requested: ', path);
-            callback('');
-        }
+
+        parseResponse(response, function (result) {
+            callback(result);
+        });
     });
     request.on('error', function (err){
         console.log('PerformRequest has encountered the following error: ' + err.message);
     });
+    postInfo.postData && request.write(postInfo.postData);
     request.end();
 }
 
-exports.OldRetrieveBatchusers = function (token, ids, callback) {
-    var https = require('https');
-    var options = {
-        'method': 'POST',
-        'host': 'api.twitter.com',
-        'path': '/1.1/users/lookup.json?user_id=' + ids,
-        'headers': {
-            'Authorization': 'Bearer ' + token
-        }
-    };
-    console.log('Requesting batch users from the Twitter API...');
-    var request = https.request(options, function (response) {
-        if (response.statusCode == 200)
-        {
-            console.log('users/lookup request succeeded with status code 200.');
+function getTwitterToken (callback) {
+     console.log("Requesting access token from Twitter.");
+     let options = {
+         hostname: 'api.twitter.com',
+         path: '/oauth2/token',
+         method: 'POST',
+         headers: {
+             'Authorization': 'Basic ' + appkey,
+             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+             'User-Agent': 'pixelstomp v1.0',
+             'Content-Length': 29
+         }
+     };
+     let https = require('https');
+     let request = https.request(options, function (response){
+         if (response.statusCode = 200)
+         {
+             parseResponse(response, function (result) {
+                 if (result.token_type && result.token_type == 'bearer')
+                 {
+                     bearerToken = result.access_token;
+                     console.log('Access token retrieved.');
+                    callback && callback(queuedArgs.shift(), queuedArgs.shift());
+                     // callback(bearerToken); // with queued args
+                 }
+                 else {
+                     throw new Error('An error was encountered when retrieving access token.');
+                 }
+             });
+         }
+         else{
+             throw new Error(`A status response of ${response.statusCode} was received from Twitter.`);
+         }
 
-            response.setEncoding('utf8');
-            var result = '';
-            response.on('data', function (chunk) {
-                result += chunk;
-            });
-            response.on('end', function (){
-                callback(result);
-            });
-        }
-        else
-        {
-            console.log('The following status code was received from the server: ' + response.statusCode + response.statusMessage);
-            callback('');
-        }
-    });
-    request.on('error', function (err){
-        console.log('RetrieveBatchusers has encountered the following error: ' + err.message);
-    });
-    request.end();
+     });
+     request.on('error', function (error) {
+         throw new Error(error.message);
+     });
+
+     //Provide POST request content
+     request.write('grant_type=client_credentials');
+     request.end();
 
 };
 
-exports.RetrieveTwitterUser = function (token, username, callback) {
-    console.log(new Date().toUTCString() + "> Requesting information from Twitter for user " + username);
-
-    var https = require('https');
-    var options = {
-        'method': 'GET',
-        'host': 'api.twitter.com',
-        'path': '/1.1/users/show.json?screen_name=' + encodeURIComponent(username.trim()),
-        'headers': {
-            'Authorization': 'Bearer ' + token
-        }
-    };
-
-    var request = https.request(options, function (response) {
-        if (response.statusCode == 200)
-        {
-            response.setEncoding('utf8');
-            var result = '';
-            response.on('data', function (chunk) {
-                result += chunk;
-            });
-            response.on('end', function (){
-                callback(result);
-            });
-        }
-        else {
-            console.log('Received a response code of ' + response.statusCode);
-            callback('');
-        }
+parseResponse = function(response, callback) {
+    response.setEncoding('utf8');
+    let stringResult = '';
+    let result = {};
+    response.on('data', function (chunk) {
+        stringResult += chunk;
     });
-    request.on('error', function (err){
-        console.log('RetrieveTwitteruser() has encountered the following error: ' + err.message);
+    response.on('end', function () {
+        try {
+            result = JSON.parse(stringResult);
+        }
+        catch (e) {
+            console.log('Response was the following string:', stringResult);
+            result = stringResult;
+        }
+        callback(result);
     });
-    request.end();
-};
-
-exports.GetTwitterToken = function (callback) {
-     //Create a client to send the request to Twitter using the app key.
-     console.log("Attempting to authenticate via Twitter...");
-     var bearerToken;
-    let auth = require('./environment');
-    var appkey = auth.getTwitterKey();
-         var options = {
-             hostname: 'api.twitter.com',
-             path: '/oauth2/token',
-             method: 'POST',
-             headers: {
-                 'Authorization': 'Basic ' + appkey,
-                 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-                 'User-Agent': 'pixelstomp v1.0',
-                 'Content-Length': 29
-             }
-         };
-         stringoptions = JSON.stringify(options);
-
-         var https = require('https');
-
-         var request = https.request(options, function (response){
-
-             resdata = '';
-
-             //Handle Twitter's response
-
-             if (response.statusCode = 200)
-             {
-                 //Handle Data
-                 console.log("A status of 200 was received from Twitter.");
-
-                 response.setEncoding('utf8')
-                 var result = '';
-
-                 response.on('data', function (chunk) {
-                     result += chunk;
-                 });
-
-                 response.on('end', function (){
-
-                     var token = JSON.parse(result);
-                     if (token.token_type = 'bearer')
-                     {
-                         //Send bearer token back to Pixelstomp.
-                         bearerToken = token.access_token;
-                         callback(bearerToken);
-                     }
-                     else{
-                         console.log("Token was of the wrong type. Process aborted.");
-                     }
-
-                 });
-
-             }
-             else{
-                 //Handle an unsuccessful response
-                 console.log("A status response of " + response.statusCode + " was received.");
-             }
-
-         });
-
-
-         //Handle errors
-         request.on('error', function (error) {
-             console.log("Error: " + error.message);
-         });
-
-         //Provide POST request content
-         request.write('grant_type=client_credentials');
-
-         //Finalize request
-         request.end();
-
 };

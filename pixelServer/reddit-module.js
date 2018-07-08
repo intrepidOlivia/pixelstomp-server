@@ -341,13 +341,10 @@ exports.getSubredditorsInfo = function (subreddit, callback) {
                     count: subMap[sub]
                 };
             }));
-            // callback(subArray);
         })
         .catch((e) => {
             callback(e);
         });
-
-    // send back 15 most popular subreddits
 }
 
 function getSubredditIntersections(subreddit) {
@@ -430,7 +427,7 @@ exports.getAllPostComments = function(subreddit, id, callback) {
 getAllReplies = function(comment) {
     let replies = [];
     let moreChildren = [];
-    if (comment.kind !== 't1') {
+    if (comment.kind !== types.COMMENT) {
         return replies;
     }
 

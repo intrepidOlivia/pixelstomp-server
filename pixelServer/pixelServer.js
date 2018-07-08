@@ -1,11 +1,7 @@
 var http = require('http');
-var https = require('https');
-var twitterToken;
-var twitter = require('./twitter-module');
 var geocoding = require('./geocoding-module');
 
 var pixelServer = http.createServer(function (request, response) {
-    //Parse the url and figure out its bits from that
     var url = require('url');
     console.log("Request was received from " + request.headers.referer + ": " + request.url);
 
@@ -22,37 +18,15 @@ var pixelServer = http.createServer(function (request, response) {
             break;
 
         case '/friendly-radius/twitter-user':
-            console.log(new Date().toUTCString() + "> Initiated request on twitter user " + queries.username);
-            twitter.GetTwitterToken(function (token) {
-                twitterToken = token;
-                twitter.RetrieveTwitterUser(token, queries.username, function (result) {
-                    response.write(result);
-                    response.end();
-                });
-            });
+            requestTwitterUser(queries.username, response);
             break;
 
         case '/friendly-radius/twitter-friends':
-            console.log(new Date().toUTCString() + "> Initiated request for friends of twitter user " + queries.username);
-            twitter.RetrieveFriends(twitterToken, queries.username, function (result) {
-                response.write(result);
-                response.end();
-            });
+            requestTwitterFriends(queries.username, response);
             break;
 
         case '/geocoding':
-            geocoding.MakeGeocodingRequest(queries['location'], function (result) {
-                response.write(geocoding.ParseCoords(result));
-                response.end();
-            });
-            break;
-
-        case '/log':
-            if (request.method == 'POST') {
-                console.log(queries.message);
-                response.write('Log message received.');
-                response.end();
-            }
+            requestCoordinates(queries.location, response);
             break;
 
         case '/reddit/comments':
@@ -89,6 +63,43 @@ pixelServer.listen(8080, function () {
 pixelServer.on('error', function (err) {
     console.log('The following error has been encountered with the server receiving requests from Pixelstomp: ' + err.message + '\n');
 });
+
+// TWITTER QUERIES
+// ---------------
+
+function requestTwitterUser(username, response) {
+    console.log(new Date().toUTCString() + "> Initiated request on twitter user " + username);
+    let twitter = require('./twitter-module');
+    twitter.RetrieveTwitterUser(username, function (result) {
+        response.write(result);
+        response.end();
+    });
+}
+
+/**
+ * @param {string} ids a string of twitter user id's, separated by commas.
+ * @param {IncomingMessage} response
+ */
+function requestBatchUsers(ids, response) {
+    console.log(new Date().toUTCString() + "> Initiated request for friends of twitter user " + username);
+    let twitter = require('./twitter-module');
+    twitter.RetrieveBatchUsers([], function (result) {
+        response.write(JSON.stringify(result));
+        response.end();
+    });
+}
+
+function requestTwitterFriends(username, response) {
+    let twitter = require('./twitter-module');
+    twitter.RetrieveFriends(username, function (result) {
+        response.write(JSON.stringify(result));
+        response.end();
+    });
+}
+
+
+// REDDIT QUERIES
+// ---------------
 
 function requestRedditorComments(user, response) {
     let reddit = require('./reddit-module');
@@ -137,6 +148,20 @@ function getPostComments(subreddit, postID, response) {
         response.end();
     });
 }
+
+// GOOGLE MAPS QUERIES
+
+function requestCoordinates(location, response) {
+    let geocoding = require('./geocoding-module');
+    geocoding.MakeGeocodingRequest(location, function (result) {
+        response.write(geocoding.ParseCoords(result));
+        response.end();
+    });
+}
+
+
+// MISC QUERIES
+// ------------
 
 //TODO: improve this to function better with the path that is actually going to be requested
 function ServePage(request, response) {
