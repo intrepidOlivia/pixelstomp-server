@@ -14,7 +14,6 @@ var types = {
     AWARD: 't6'
 };
 
-
 // Live values
 let requestID = null;   // Shall be the timestamp, in seconds, that an access token was most recently requested.
 let expiry = null;      // Shall be the timestamp, in seconds, that the current access token will expire.
@@ -200,6 +199,11 @@ exports.searchForRedditor = function(username, callback) {
     });
 };
 
+/**
+ * Gets the most recent 1000 comments made by a user.
+ * @param {string} username
+ * @param {function} callback
+ */
 exports.getAllComments = function(username, callback) {
     //send the request to retrieve the first page of comments
     console.log(`Retrieving comments for redditor ${username}:`);
@@ -244,13 +248,15 @@ exports.getPost = function (subreddit, id, callback) {
             callback(result);
         }
 
-        callback({
-            // This will currently retrieve all root-level comments in the post
-            comments: result[1] ? result[1].data.children : [],
-            link: result[0].data.children[0]
-        });
+        callback(result);
+
+        // callback({
+        //     // This will currently retrieve all root-level comments in the post
+        //     comments: result[1] ? result[1].data.children : [],
+        //     link: result[0].data.children[0]
+        // });
     });
-}
+};
 
 exports.getTrackedVotes = function (subreddit, id, callback) {
     this.getPost(subreddit, id, function (result) {
@@ -398,50 +404,64 @@ function trackVoteRhythm(post) {
 }
 
 exports.getAllPostComments = function(subreddit, id, callback) {
-    let allComments = [];
-    makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
-        let rootComments = result[1];
-        rootComments.data.children.forEach((comment) => {
+    let threads = [];
 
-            if (comment.kind == 'more') {
-                // handle a moreChildren scenario
-                return;
+
+    // let allComments = [];   //
+    makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
+        let comments = result[1];
+        let toProcess = comments.data.children.length;
+        let processed = 0;
+
+        comments.data.children.forEach((rootComment) => {
+            let thread = [];
+            if (rootComment.kind == 'more') {
+                // handle more root comments
+            } else {
+                thread.push({
+                    body: rootComment.data.body,
+                    id: rootComment.data.id,
+                    author: rootComment.data.author,
+                    score: rootComment.data.score,
+                    permalink: `https://www.reddit.com/${rootComment.data.permalink}`,
+                    created: rootComment.data.created
+                });
             }
 
-            let thread = [];
-            thread.push({
-                body: comment.data.body,
-                id: comment.data.id,
-                author: comment.data.author,
-                score: comment.data.score,
-                permalink: `https://www.reddit.com/${comment.data.permalink}`,
-                created: comment.data.created
+            getAllReplies(rootComment, function (replies) {
+                thread = thread.concat(replies);
+                threads.push(thread);
+                processed++;
+                if (processed == toProcess) {
+                    callback(threads);
+                }
             });
-            thread = thread.concat(getAllReplies(comment));
-            allComments.push(thread);
         });
-        callback(allComments);
     });
 }
 
-getAllReplies = function(comment) {
-    let replies = [];
-    let moreChildren = [];
-    if (comment.kind !== types.COMMENT) {
-        return replies;
+function getAllReplies(comment, callback) {
+    if (!comment.data.replies) {
+        callback([]);
+        return;
     }
 
-    if (typeof comment.data.replies == 'object') {
-        comment.data.replies.data.children.forEach((reply) => {
-            if (reply.kind == 'more') {
-                // add any additional children to more children to retrieve
-                reply.data.children && reply.data.children.forEach((id) => {
-                    moreChildren.push(id);
-                });
-                return;
-            }
+    if(comment.kind == 'more') {
+        callback([]);
+        return;
+    }
 
-            replies.push({
+    let replyCollection = [];
+    let replies = comment.data.replies.data.children;
+    let toProcess = replies.length;
+    let processed = 0;
+
+    replies.forEach((reply) => {
+
+        if (reply.kind == 'more') {
+            // handle more children
+        } else {
+            replyCollection.push({
                 body: reply.data.body,
                 id: reply.data.id,
                 author: reply.data.author,
@@ -449,49 +469,45 @@ getAllReplies = function(comment) {
                 permalink: `https://www.reddit.com/${reply.data.permalink}`,
                 created: reply.data.created
             });
+        }
 
-            replies = replies.concat(getAllReplies(reply))
+        getAllReplies(reply, function (moreReplies) {
+            replyCollection = replyCollection.concat(moreReplies);
+            processed++;
+            if (processed == toProcess) {
+                callback(replyCollection);
+            }
         });
-    }
-
-    // TODO: Figure out how to implement this later
-    // if(moreChildren.length > 0) {
-    //     console.log('children not retrieved:', moreChildren);
-    // }
-    return replies;
+    });
 }
 
 /**
  * @param {string} link  The fullname of a post
- * @param {array} ids   Strings of ID36's comment
+ * @param {array} ids   Strings of ID36's of comments
  * @returns {Promise<any>} Resolves with an array of comment objects retrieved from the reddit API.
  */
-getMoreChildren = function(link, ids) {
-    return new Promise(function (resolve, reject) {
-        if (ids.length > 100) {
-            // do something else
-            reject();
-        }
-        let idstring = '';
-        ids.forEach((id, index) => {
-            idstring += `${id}`;
-            idstring += index === ids.length - 1 ? '' : ',';
-        });
-        makeAuthorizedRequest(`/api/morechildren?link_id=${link}&children=${idstring}`, function (result) {
-            if (result.jquery) {
-                result.jquery.forEach((item) => {
-                    // console.log(item);
-                    if (item[0] == 10) {
-                        console.log(item[3]);
-                        let commentArray = item[3][0];
-                        resolve(commentArray);
-                    }
-                });
-            } else {
-                console.log('An error occurred:', result);
-                reject(result);
-            }
-        });
+getMoreChildren = function(link, ids, callback) {
+    if (ids.length > 100) {
+        // do something else
+        reject();
+    }
+    let idstring = '';
+    ids.forEach((id, index) => {
+        idstring += `${id}`;
+        idstring += index === ids.length - 1 ? '' : ',';
     });
-
+    makeAuthorizedRequest(`/api/morechildren?link_id=${link}&children=${idstring}`, function (result) {
+        if (result.jquery) {
+            result.jquery.forEach((item) => {
+                // console.log(item);
+                if (item[0] == 10) {
+                    console.log(item[3]);
+                    let commentArray = item[3][0];
+                    callback(commentArray);
+                }
+            });
+        } else {
+            throw new Error(result.toString());
+        }
+    });
 }
