@@ -404,38 +404,61 @@ function trackVoteRhythm(post) {
 }
 
 exports.getAllPostComments = function(subreddit, id, callback) {
-    let threads = [];
-
-
-    // let allComments = [];   //
     makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
-        let comments = result[1];
-        let toProcess = comments.data.children.length;
-        let processed = 0;
+        processPostComments(result, callback);
+    });
+}
 
-        comments.data.children.forEach((rootComment) => {
-            let thread = [];
-            if (rootComment.kind == 'more') {
-                // handle more root comments
-            } else {
-                thread.push({
-                    body: rootComment.data.body,
-                    id: rootComment.data.id,
-                    author: rootComment.data.author,
-                    score: rootComment.data.score,
-                    permalink: `https://www.reddit.com/${rootComment.data.permalink}`,
-                    created: rootComment.data.created
+/**
+ * @param result The result of a call to /r/subreddit/comments/id
+ */
+function processPostComments(result, callback) {
+    let threads = [];
+    let comments = result[1];
+    let toProcess = comments.data.children.length;
+    let processed = 0;
+
+    comments.data.children.forEach((rootComment) => {
+        let thread = [];
+        if (rootComment.kind == 'more') {
+            let ids = rootComment.data.children;
+            let link = rootComment.data.parent_id;
+            getMoreChildren(link, ids, function (result) {
+                result.forEach((comment) => {
+                    thread.push({
+                        body: comment.data.body,
+                        id: comment.data.id,
+                        author: comment.data.author,
+                        score: comment.data.score,
+                        permalink: `https://www.reddit.com/${comment.data.permalink}`,
+                        created: comment.data.created
+                    });
                 });
-            }
-
-            getAllReplies(rootComment, function (replies) {
-                thread = thread.concat(replies);
                 threads.push(thread);
                 processed++;
                 if (processed == toProcess) {
                     callback(threads);
                 }
             });
+            return;
+        } else {
+            thread.push({
+                body: rootComment.data.body,
+                id: rootComment.data.id,
+                author: rootComment.data.author,
+                score: rootComment.data.score,
+                permalink: `https://www.reddit.com/${rootComment.data.permalink}`,
+                created: rootComment.data.created
+            });
+        }
+
+        getAllReplies(rootComment, function (replies) {
+            thread = thread.concat(replies);
+            threads.push(thread);
+            processed++;
+            if (processed == toProcess) {
+                callback(threads);
+            }
         });
     });
 }
@@ -459,7 +482,24 @@ function getAllReplies(comment, callback) {
     replies.forEach((reply) => {
 
         if (reply.kind == 'more') {
-            // handle more children
+            let ids = reply.data.children;
+            let link = comment.data.link_id;
+            getMoreChildren(link, ids, function (result) {
+                result.forEach((childComment) => {
+                    replyCollection.push({
+                        body: childComment.data.body,
+                        id: childComment.data.id,
+                        author: childComment.data.author,
+                        score: childComment.data.score,
+                        permalink: `https://www.reddit.com/${childComment.data.permalink}`,
+                        created: childComment.data.created
+                    });
+                });
+                processed++;
+                if (processed == toProcess) {
+                    callback(replyCollection);
+                }
+            });
         } else {
             replyCollection.push({
                 body: reply.data.body,
@@ -489,7 +529,7 @@ function getAllReplies(comment, callback) {
 getMoreChildren = function(link, ids, callback) {
     if (ids.length > 100) {
         // do something else
-        reject();
+        callback([]);
     }
     let idstring = '';
     ids.forEach((id, index) => {
@@ -501,7 +541,6 @@ getMoreChildren = function(link, ids, callback) {
             result.jquery.forEach((item) => {
                 // console.log(item);
                 if (item[0] == 10) {
-                    console.log(item[3]);
                     let commentArray = item[3][0];
                     callback(commentArray);
                 }
