@@ -53,6 +53,10 @@ var pixelServer = http.createServer(function (request, response) {
             getPostComments(queries.subreddit, queries.id, response);
             break;
 
+        case '/reddit/subreddit/comments/hot':
+            getHotComments(queries.subreddit, response);
+            break;
+
         default:
             response = Serve404(request, response);
     }
@@ -133,6 +137,16 @@ function getPostComments(subreddit, postID, response) {
     reddit.getAllPostComments(subreddit, postID, function (result) {
         response.write(JSON.stringify(result));
         response.end();
+    });
+}
+
+/**
+* Retrieves all "hot" comments from "the current "hot" posts of the subreddit
+*/
+function getHotComments(subreddit, response) {
+    let reddit=require('./reddit-module');
+    reddit.getHotPostComments(subreddit, function (result) {
+        response.write(JSON.stringify(result));
     });
 }
 

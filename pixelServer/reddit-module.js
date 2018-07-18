@@ -269,7 +269,6 @@ function gatherComments(result) {
     let commentSet = [];
     // hold all the comments in an array of strings.
     if (result.message) {
-        console.log('result of gatherComments:', result);
         return commentSet;
     }
 
@@ -299,7 +298,6 @@ function getNextUserCommentsPage(path, after, commentSet, count) {
                         reject(message);
                     });
             } else {
-                console.log('Number of comments retrieved:', commentSet.length);
                 resolve(commentSet);
             }
         });
@@ -418,6 +416,10 @@ function processPostComments(result, callback) {
     let toProcess = comments.data.children.length;
     let processed = 0;
 
+    if (toProcess <= 0) {
+        callback(threads);
+    }
+
     comments.data.children.forEach((rootComment) => {
         let thread = [];
         if (rootComment.kind == 'more') {
@@ -526,10 +528,11 @@ function getAllReplies(comment, callback) {
  * @param {array} ids   Strings of ID36's of comments
  * @returns {Promise<any>} Resolves with an array of comment objects retrieved from the reddit API.
  */
-getMoreChildren = function(link, ids, callback) {
+function getMoreChildren(link, ids, callback) {
     if (ids.length > 100) {
         // do something else
-        callback([]);
+        handleManyMoreChildren(link, ids, callback);
+        return;
     }
     let idstring = '';
     ids.forEach((id, index) => {
@@ -539,7 +542,6 @@ getMoreChildren = function(link, ids, callback) {
     makeAuthorizedRequest(`/api/morechildren?link_id=${link}&children=${idstring}`, function (result) {
         if (result.jquery) {
             result.jquery.forEach((item) => {
-                // console.log(item);
                 if (item[0] == 10) {
                     let commentArray = item[3][0];
                     callback(commentArray);
@@ -548,5 +550,52 @@ getMoreChildren = function(link, ids, callback) {
         } else {
             throw new Error(result.toString());
         }
+    });
+}
+
+function handleManyMoreChildren(link, ids, callback) {
+    let bigResult = [];
+    let truncated = ids.slice(0, 99);
+    let rest = ids.slice(100);
+    let splitArrays = [truncated, rest];
+    let toProcess = splitArrays.length;
+    let processed = 0;
+    splitArrays.forEach((array) => {
+        getMoreChildren(link, array, function (result) {
+            bigResult = bigResult.concat(result);
+            processed++;
+            if (processed == toProcess) {
+                callback(bigResult);
+            }
+        });
+    });
+}
+
+function getHotPosts(subreddit, callback) {
+    makeAuthorizedRequest(`/r/${subreddit}/hot`, function (result) {
+        if (!result.data || !result.data.children) {
+            callback({ error: result });
+        }
+        callback(result.data.children);
+    });
+}
+
+exports.getHotPostComments = function (subreddit, callback) {
+    let allComments = [];
+    getHotPosts(subreddit, function (result) {
+        if (result.error) {
+            callback(result);
+        }
+        const postsToProcess = result.length;
+        let postsProcessed = 0;
+        result.forEach((post) => {
+            exports.getAllPostComments(subreddit, post.data.id, function (result) {
+                postsProcessed++;
+                allComments = allComments.concat(result);
+                if (postsProcessed == postsToProcess) {
+                    callback && callback(allComments);
+                }
+            });
+        });
     });
 }
