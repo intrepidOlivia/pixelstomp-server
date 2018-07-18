@@ -147,6 +147,7 @@ function getHotComments(subreddit, response) {
     let reddit=require('./reddit-module');
     reddit.getHotPostComments(subreddit, function (result) {
         response.write(JSON.stringify(result));
+        response.end();
     });
 }
 
