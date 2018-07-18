@@ -496,7 +496,7 @@ function getAllReplies(comment, callback) {
 }
 
 function pushCommentToThread(comment, thread) {
-    if(!comment.body) {
+    if(!comment.data.body) {
         console.log('stray comment:', comment);
     }
     thread.push({
