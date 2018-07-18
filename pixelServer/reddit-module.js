@@ -496,8 +496,9 @@ function getAllReplies(comment, callback) {
 }
 
 function pushCommentToThread(comment, thread) {
-    if(!comment.data.body) {
-        console.log('stray comment:', comment);
+    if (comment.kind == 'more') {
+        console.log('number of some comments that were not retrieved:', comment.data.children.length);
+        return thread;
     }
     thread.push({
         body: comment.data.body,
@@ -516,8 +517,8 @@ function pushCommentToThread(comment, thread) {
  * @returns {Promise<any>} Resolves with an array of comment objects retrieved from the reddit API.
  */
 function getMoreChildren(link, ids, callback) {
+    // TODO: Make this function not send back any comments that are of kind 'more'
     if (ids.length > 100) {
-        // do something else
         handleManyMoreChildren(link, ids, callback);
         return;
     }
