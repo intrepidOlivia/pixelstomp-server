@@ -427,14 +427,7 @@ function processPostComments(result, callback) {
             let link = rootComment.data.parent_id;
             getMoreChildren(link, ids, function (result) {
                 result.forEach((comment) => {
-                    thread.push({
-                        body: comment.data.body,
-                        id: comment.data.id,
-                        author: comment.data.author,
-                        score: comment.data.score,
-                        permalink: `https://www.reddit.com/${comment.data.permalink}`,
-                        created: comment.data.created
-                    });
+                    thread = pushCommentToThread(comment, thread);
                 });
                 threads.push(thread);
                 processed++;
@@ -444,14 +437,7 @@ function processPostComments(result, callback) {
             });
             return;
         } else {
-            thread.push({
-                body: rootComment.data.body,
-                id: rootComment.data.id,
-                author: rootComment.data.author,
-                score: rootComment.data.score,
-                permalink: `https://www.reddit.com/${rootComment.data.permalink}`,
-                created: rootComment.data.created
-            });
+            thread = pushCommentToThread(rootComment, thread);
         }
 
         getAllReplies(rootComment, function (replies) {
@@ -488,14 +474,7 @@ function getAllReplies(comment, callback) {
             let link = comment.data.link_id;
             getMoreChildren(link, ids, function (result) {
                 result.forEach((childComment) => {
-                    replyCollection.push({
-                        body: childComment.data.body,
-                        id: childComment.data.id,
-                        author: childComment.data.author,
-                        score: childComment.data.score,
-                        permalink: `https://www.reddit.com/${childComment.data.permalink}`,
-                        created: childComment.data.created
-                    });
+                    replyCollection = pushCommentToThread(childComment, replyCollection);
                 });
                 processed++;
                 if (processed == toProcess) {
@@ -503,14 +482,7 @@ function getAllReplies(comment, callback) {
                 }
             });
         } else {
-            replyCollection.push({
-                body: reply.data.body,
-                id: reply.data.id,
-                author: reply.data.author,
-                score: reply.data.score,
-                permalink: `https://www.reddit.com/${reply.data.permalink}`,
-                created: reply.data.created
-            });
+            replyCollection = pushCommentToThread(reply, replyCollection);
         }
 
         getAllReplies(reply, function (moreReplies) {
@@ -521,6 +493,21 @@ function getAllReplies(comment, callback) {
             }
         });
     });
+}
+
+function pushCommentToThread(comment, thread) {
+    if(!comment.body) {
+        console.log('stray comment:', comment);
+    }
+    thread.push({
+        body: comment.data.body,
+        id: comment.data.id,
+        author: comment.data.author,
+        score: comment.data.score,
+        permalink: `https://www.reddit.com/${comment.data.permalink}`,
+        created: comment.data.created
+    });
+    return thread;
 }
 
 /**
