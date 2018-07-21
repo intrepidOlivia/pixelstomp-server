@@ -11,6 +11,10 @@ let queuedArgs = [];        // Queued paths to query after another bearer token 
 
 exports.RetrieveFriends = function (username, callback) {
     makeAuthorizedGet(`/1.1/friends/ids.json?screen_name=${username}`, function (result) {
+        if (result.error) {
+            callback(result);
+            return;
+        }
         RetrieveBatchUsers(result.ids, function (users) {
             let accounts = users.map((user) => {
                 return {
@@ -96,7 +100,14 @@ function makeAuthorizedGet (path, callback) {
 
     let request = https.request(options, function (response) {
         if (response.statusCode !== 200) {
-            throw new Error (`A status code of ${response.statusCode} was received from Twitter.`);
+            callback({
+                error: 'An error was received from the Twitter servers.',
+                response: response.responseText,
+                status: response.statusCode,
+                statusMessage: response.statusMessage,
+            });
+            console.log('response:', response);
+            return;
         }
         parseResponse(response, function (result) {
             callback(result);
