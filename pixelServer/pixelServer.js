@@ -49,6 +49,10 @@ var pixelServer = http.createServer(function (request, response) {
             getSubredditIntersection(queries.subreddit, response);
             break;
 
+        case '/reddit/subreddit/commenters/posts':
+            requestCommenterPosts(queries.subreddit, response);
+            break;
+
         case '/reddit/post/comments':
             getPostComments(queries.subreddit, queries.id, response);
             break;
@@ -91,6 +95,14 @@ function requestTwitterFriends(username, response) {
 
 // REDDIT QUERIES
 // ---------------
+
+function requestCommenterPosts(subreddit, response) {
+    let reddit = require('./reddit-module');
+    reddit.getCommenterPosts(subreddit, function (result) {
+        response.write(JSON.stringify(result));
+        response.end();
+    });
+}
 
 function requestRedditorComments(user, response) {
     let reddit = require('./reddit-module');

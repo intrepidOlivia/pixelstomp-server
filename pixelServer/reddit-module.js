@@ -587,3 +587,66 @@ exports.getHotPostComments = function (subreddit, callback) {
         });
     });
 }
+
+exports.getCommenterPosts = function (subreddit, callback) {
+    exports.getHotPostComments(subreddit, function (threads) {
+        let commentsToProcess = 0;
+        let commentsProcessed = 0;
+        let authorMap = {};
+        // let postMap = {};
+        let posts = [];
+        threads.forEach((thread) => {
+            commentsToProcess += thread.length;
+            thread.forEach((comment) => {
+                let author = comment.author;
+                if (authorMap[author]) {
+                    commentsProcessed++;
+                    if (commentsProcessed == commentsToProcess) {
+                        callback(posts);
+                    }
+                    return;
+                }
+                console.log('getting posts for author:', author);
+                getHotRedditorPosts(author, function (posts) {
+                    authorMap[author] = true;
+                    // callback(posts);    // TEMPORARY
+                    posts.forEach((post) => {
+                        if (post.kind !== 't3') {
+                            return;
+                        }
+                        posts.push(formatPost(post));
+                    });
+                    commentsProcessed++;
+                    if (commentsProcessed == commentsToProcess) {
+                        callback(posts);
+                    }
+                });
+            });
+        });
+    });
+}
+
+function formatPost(post) {
+    return {
+        subreddit: post.data.subreddit,
+        body: post.data.body,
+        selftext: post.data.selftext,
+        title: post.data.title,
+        created: post.data.created,
+        score: post.data.score,
+        url: post.data.url
+    }
+}
+
+/**
+ * Gathers the most recent posts made by a redditor and sends them to the provided callback
+ * @param {string} username     The username of the redditor
+ * @param {function} callback   The server response is sent as a single argument to this callback
+ */
+function getHotRedditorPosts(username, callback) {
+    makeAuthorizedRequest(`/user/${username}/submitted`, function (result) {
+        callback(result.data.children);
+    });
+}
+
+// TODO: Add functionality to see if a redditor has an unusually high frequency of interaction with another redditor
