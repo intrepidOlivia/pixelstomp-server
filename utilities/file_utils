@@ -1,0 +1,29 @@
+/**
+ * Write data to disk.
+ * WARNING: This will overwrite any file that already exists at the specified path.
+ *
+ * @param data {string, Buffer}
+ * @param path {string} the file path + name to write into, including extension
+ * @param callback {function} Function to call back to. Will be passed in the data written, or an error if an error was produced.
+ */
+exports.writeToDisk = function(data, path, callback) {
+	let fs = require('fs');
+
+	// The file is created if it does not exist (with 'w')
+	fs.open(path, 'w', function (err, fd) {
+		if (err) {
+			// handle error
+			callback && callback(err);
+			return;
+		}
+
+		fs.writeFile(path, data, (err) => {
+			if (err) {
+				//handle error
+				callback && callback(err);
+				return;
+			}
+			callback && callback(data);
+		});
+	});
+};

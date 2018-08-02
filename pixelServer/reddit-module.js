@@ -65,6 +65,13 @@ function retrieveAccessToken(callback) {
 }
 
 /**
+ *
+ * @param path {string} The path to call via the reddit API
+ * @param callback {function} the function to send the API result to.
+ */
+exports.makeAuthorizedRequest = makeAuthorizedRequest;
+
+/**
  * When provided with an appropriate path, sends the API result to the callback.
  */
 function makeAuthorizedRequest(path, callback) {
