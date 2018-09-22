@@ -19,8 +19,8 @@ let requestID = null;   // Shall be the timestamp, in seconds, that an access to
 let expiry = null;      // Shall be the timestamp, in seconds, that the current access token will expire.
 let bearerToken = null; // Shall be the current access token.
 let queuedArgs = [];   // Queued paths to query after another bearer token is retrieved.
-let after = '';
-let before = '';
+let after = '';         // Used for paging
+let before = '';        // Used for paging
 
 // REDDIT ACCESS FUNCTIONS
 // -----------------------

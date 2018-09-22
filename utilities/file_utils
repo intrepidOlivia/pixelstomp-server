@@ -1,6 +1,10 @@
+// TODO: Write unit tests for these functions. (add cleanup)
+
 /**
  * Write data to disk.
  * WARNING: This will overwrite any file that already exists at the specified path.
+ *
+ * Error handling: An error from this method will be an array object also containing the properties 'errno', 'code', 'syscall', and 'path'.
  *
  * @param data {string, Buffer}
  * @param path {string} the file path + name to write into, including extension
@@ -23,7 +27,38 @@ exports.writeToDisk = function(data, path, callback) {
 				callback && callback(err);
 				return;
 			}
-			callback && callback(data);
+			callback && callback(true);
+			fs.close(fd);
 		});
 	});
 };
+
+/**
+ * Append data to a file on the disk. An error will be returned if the file does not already exist.
+ *
+ * @param data {string, Buffer}
+ * @param path {string} the file path + name to write into, including extension
+ * @param callback {function} Function to call back to. Will be passed in the data written, or an error if an error was produced.
+ */
+exports.appendToFile = function(data, path, callback) {
+	let fs = require('fs');
+
+	fs.open(path, 'ax', function (err, fd) {
+		if (err) {
+			// handle error
+			callback && callback(err);
+			return;
+		}
+
+		// TODO: Find out why this throws an error when the file already exists.
+		fs.appendFile(fd, data, 'utf8', function (err) {
+			if (err) {
+				callback && callback(err);
+				return;
+			}
+
+			callback && callback(true);
+			fs.close(fd);
+		});
+	});
+}
