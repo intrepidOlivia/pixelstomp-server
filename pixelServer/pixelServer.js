@@ -61,6 +61,10 @@ var pixelServer = http.createServer(function (request, response) {
             getHotComments(queries.subreddit, response);
             break;
 
+        case '/youtube/comments/':
+            getCommentsOfVideo(queries.v, response);
+            break;
+
         default:
             response = Serve404(request, response);
     }
@@ -171,6 +175,17 @@ function requestCoordinates(location, response) {
         response.write(geocoding.ParseCoords(result));
         response.end();
     });
+}
+
+// YOUTUBE QUERIES
+// ---------------
+
+getCommentsOfVideo(videoID, response) {
+  const youtube = require('./youtube-module');
+  youtube.getAllComments(videoID, function (comments) {
+    response.write(JSON.stringify(comments));
+    response.end();
+  });
 }
 
 
