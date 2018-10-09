@@ -1,46 +1,92 @@
 const ytKey = require('./environment').getYoutubeKey();
-const ROOT_URL = 'https://www.googleapis.com/youtube/v3';
+const ROOT_URL = 'content.googleapis.com';
 
-export function getAllComments(videoID) {
+/**
+* This function will retrieve all comments from a Youtube video (except possibly extremely long reply threads).
+* What will be passed into the callback function is an array of threads.
+* Each thread is an array of comment objects. The first element of the thread array is always the first comment,
+* followed by each subsequent reply.
+*/
+exports.getAllComments = function (videoID, callback) {
 	getCommentThreads(videoID, function (result) {
+		if (!result.length) {
+			console.log('Whats wrong with result?', result);
+		}
+
 		// For each thread, get all comments
-		// TODO: Fix all response formats
 		let threadArray = [];
-		const threadsToProcess = result.length;
+		const threadsToProcess = result.items.length;
 		let threadsProcessed = 0;
 
-		result.forEach((commentHead) => {
+		result.items.forEach((commentHead) => {
+			// console.log('structure of commentHead:', commentHead);
 			let commentThread = [];
-			commentThread[0] = commentHead;
+			commentThread[0] = commentHead.snippet.topLevelComment;
+			if (commentHead.snippet.totalReplyCount > 0) {
+				getAllReplies(commentHead.id, function (replyArray) {
+					commentThread = commentThread.concat(replyArray);
+					threadArray.push(commentThread);
+					threadsProcessed += 1;
 
-			getAllReplies(commentHead.id, function (replyArray) {
-				commentThread = commentThread.concat(replyArray);
+					if (threadsProcessed === threadsToProcess) {
+						callback(threadArray);
+					}
+				});
+			} else {	// if there are no additional replies to the comment
 				threadArray.push(commentThread);
 				threadsProcessed += 1;
 
 				if (threadsProcessed === threadsToProcess) {
 					callback(threadArray);
 				}
-			});
+			}
 		});
 	});
 }
 
 // Will return an array of comment arrays, with only the head comment available.
 function getCommentThreads(videoID, callback) {
-	const path = '/commentThreads';
-	const queryString = `part=snippet+id&videoId=${videoID}`;
-	makeHTTPSRequest(`${path}?${queryString}`, callback);
+	const queryString = `part=snippet&videoId=${videoID}&maxResults=100`;
+	const url = `/commentThreads?${queryString}`;
+	// makeHTTPSRequest(url, callback);
+	// TODO: Add pagination support
+	makeHTTPSRequest(url, function (result) {
+		if (result.nextPageToken) {
+			let resultArray = [result];
+			pageToEnd(url, result.nextPageToken, resultArray, function (finalResultArray) {
+				// Combine all results?
+				let items = [];
+				finalResultArray.forEach((threadParent) => {
+					items = items.concat(threadParent.items);
+				});
+				callback({ items });
+			});
+		} else {
+			callback(result);
+		}
+	});
+}
+
+// Adds subsequent results to an array as it pages through.
+function pageToEnd(url, nextPageToken, resultArray, callback) {
+	makeHTTPSRequest(`${url}&pageToken=${nextPageToken}`, function (result) {
+		if (result.nextPageToken) {
+			resultArray.push(result);
+			pageToEnd(url, result.nextPageToken, resultArray, callback);
+		} else {
+			callback(resultArray);
+		}
+	});
 }
 
 function getAllReplies(commentID, callback) {
-	// TODO: Check the API to see if this is correct
 	const path = '/comments';
-	const queryString = `part=snippet+id&parent=${commentID}`;
+	const queryString = `part=snippet&parentId=${commentID}&maxResults=100`;
 	makeHTTPSRequest(`${path}?${queryString}`, function (result) {
-		// Send full comment array back to requester
+		// Send full comment array back
+		// console.log('structure of result:', result);
 		let replyArray = [];
-		result.forEach((comment) => {	// TODO: fix with actual format
+		result.items.forEach((comment) => {
 			replyArray.push(comment);
 		});
 		callback(replyArray);
@@ -52,11 +98,12 @@ function authenticate() {
 }
 
 function makeHTTPSRequest(path, callback) {
+	console.log("making HTTP request to: ", path);
 	const https = require('https');
 	const options = {
 		method: 'GET',
 		host: ROOT_URL,
-		path: `${path}&key=${ytKey}`,	// TODO: make sure token format is right
+		path: `/youtube/v3${path}&key=${ytKey}`,	// TODO: make sure token format is right
 		headers: {},
 	};
 	const request = https.request(options, function (response) {
@@ -64,9 +111,13 @@ function makeHTTPSRequest(path, callback) {
 		parseResponse(response)
 			.then((result) => {
 				callback(result);
+			})
+			.catch((err) => {
+				console.log('Error while parsing response:', err);
 			});
 	});
 	request.on('error', function (err) {
+		console.log('An error was encountered with the following request:', request);
 		throw err;
 	});
 	request.end();

@@ -61,7 +61,7 @@ var pixelServer = http.createServer(function (request, response) {
             getHotComments(queries.subreddit, response);
             break;
 
-        case '/youtube/comments/':
+        case '/youtube/comments':
             getCommentsOfVideo(queries.v, response);
             break;
 
@@ -180,7 +180,7 @@ function requestCoordinates(location, response) {
 // YOUTUBE QUERIES
 // ---------------
 
-getCommentsOfVideo(videoID, response) {
+function getCommentsOfVideo(videoID, response) {
   const youtube = require('./youtube-module');
   youtube.getAllComments(videoID, function (comments) {
     response.write(JSON.stringify(comments));
