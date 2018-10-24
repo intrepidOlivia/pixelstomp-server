@@ -84,7 +84,6 @@ function getAllReplies(commentID, callback) {
 	const queryString = `part=snippet&parentId=${commentID}&maxResults=100`;
 	makeHTTPSRequest(`${path}?${queryString}`, function (result) {
 		// Send full comment array back
-		// console.log('structure of result:', result);
 		let replyArray = [];
 		result.items.forEach((comment) => {
 			replyArray.push(comment);
@@ -93,9 +92,23 @@ function getAllReplies(commentID, callback) {
 	});
 }
 
-function authenticate() {
-
+exports.getVideoThumbnail = function (videoID, callback) {
+		let path = `/videos?id=${videoID}&part=snippet&fields=items(id,snippet/thumbnails)`;
+		makeHTTPSRequest(path, callback);
 }
+
+exports.getRecentVideo = function(user, callback) {
+	// first, query channels for uploads playlist ID
+	let path = `/channels?id=${user}&part=contentDetails`;
+	makeHTTPSRequest(path, (result) => {
+		const uploads = result.items[0].contentDetails.relatedPlaylists.uploads;
+		// make request for retrieving videos in "uploads" playlist
+		let vidPath = `/playlistItems?playlistId=${uploads}&part=contentDetails&maxResults=1`;
+		makeHTTPSRequest(vidPath, (playListItems) => {
+			callback(playListItems.items[0].contentDetails.videoId);
+		});
+	});
+};
 
 function makeHTTPSRequest(path, callback) {
 	console.log("making HTTP request to: ", path);
@@ -103,7 +116,7 @@ function makeHTTPSRequest(path, callback) {
 	const options = {
 		method: 'GET',
 		host: ROOT_URL,
-		path: `/youtube/v3${path}&key=${ytKey}`,	// TODO: make sure token format is right
+		path: `/youtube/v3${path}&key=${ytKey}`,
 		headers: {},
 	};
 	const request = https.request(options, function (response) {
