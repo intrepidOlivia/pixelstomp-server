@@ -61,6 +61,18 @@ var pixelServer = http.createServer(function (request, response) {
             getHotComments(queries.subreddit, response);
             break;
 
+        case '/youtube/comments':
+            getCommentsOfVideo(queries.v, response);
+            break;
+
+        case '/youtube/thumbnail':
+            getYoutubeThumbnail(queries.v, response);
+            break;
+
+        case '/youtube/videoRecent':
+            getRecentVideo(queries.user, response);
+            break;
+
         default:
             response = Serve404(request, response);
     }
@@ -169,6 +181,33 @@ function requestCoordinates(location, response) {
     let geocoding = require('./geocoding-module');
     geocoding.MakeGeocodingRequest(location, function (result) {
         response.write(geocoding.ParseCoords(result));
+        response.end();
+    });
+}
+
+// YOUTUBE QUERIES
+// ---------------
+
+function getCommentsOfVideo(videoID, response) {
+  const youtube = require('./youtube-module');
+  youtube.getAllComments(videoID, function (comments) {
+    response.write(JSON.stringify(comments));
+    response.end();
+  });
+}
+
+function getYoutubeThumbnail(videoID, response) {
+  const youtube = require('./youtube-module');
+  youtube.getVideoThumbnail(videoID, function (thumbnail) {
+    response.write(JSON.stringify(thumbnail));
+    response.end();
+  });
+}
+
+function getRecentVideo(user, response) {
+    const youtube = require('./youtube-module');
+    youtube.getRecentVideo(user, (videoID) => {
+        response.write(JSON.stringify(videoID));
         response.end();
     });
 }
