@@ -207,7 +207,7 @@ function getYoutubeThumbnail(videoID, response) {
 function getRecentVideo(user, response) {
     const youtube = require('./youtube-module');
     youtube.getRecentVideo(user, (videoID) => {
-        response.write(JSON.stringify(videoID));
+        response.write(videoID);
         response.end();
     });
 }
