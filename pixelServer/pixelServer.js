@@ -11,71 +11,83 @@ var pixelServer = http.createServer(function (request, response) {
 
     response.setHeader('Access-Control-Allow-Origin', '*');
 
-    switch (path)
-    {
-        case '/friendly-radius/twitter-authenticate.js':
-            response = ServePage(request, response);
-            break;
+    try {
+		switch (path)
+		{
+			case '/friendly-radius/twitter-authenticate.js':
+				response = ServePage(request, response);
+				break;
 
-        case '/friendly-radius/twitter-user':
-            requestTwitterUser(queries.username, response);
-            break;
+			case '/friendly-radius/twitter-user':
+				requestTwitterUser(queries.username, response);
+				break;
 
-        case '/friendly-radius/twitter-friends':
-            requestTwitterFriends(queries.username, response);
-            break;
+			case '/friendly-radius/twitter-friends':
+				requestTwitterFriends(queries.username, response);
+				break;
 
-        case '/geocoding':
-            requestCoordinates(queries.location, response);
-            break;
+			case '/twitter/recentTweets':
+				requestRecentTweets(queries.username, response);
+				break;
 
-        case '/reddit/comments':
-            requestRedditorComments(queries.user, response);
-            break;
+			case '/geocoding':
+				requestCoordinates(queries.location, response);
+				break;
 
-        case '/reddit/wordcloud':
-            generateWordCloud(queries.user, response);
-            break;
+			case '/reddit/comments':
+				requestRedditorComments(queries.user, response);
+				break;
 
-        case '/reddit/redditor':
-            getRedditorInfo(queries.user, response);
-            break;
+			case '/reddit/wordcloud':
+				generateWordCloud(queries.user, response);
+				break;
 
-        case '/reddit/track_votes':
-            trackRedditComments(queries.subreddit, queries.id, response);
-            break;
+			case '/reddit/redditor':
+				getRedditorInfo(queries.user, response);
+				break;
 
-        case '/reddit/subredditors':
-            getSubredditIntersection(queries.subreddit, response);
-            break;
+			case '/reddit/track_votes':
+				trackRedditComments(queries.subreddit, queries.id, response);
+				break;
 
-        case '/reddit/subreddit/commenters/posts':
-            requestCommenterPosts(queries.subreddit, response);
-            break;
+			case '/reddit/subredditors':
+				getSubredditIntersection(queries.subreddit, response);
+				break;
 
-        case '/reddit/post/comments':
-            getPostComments(queries.subreddit, queries.id, response);
-            break;
+			case '/reddit/subreddit/commenters/posts':
+				requestCommenterPosts(queries.subreddit, response);
+				break;
 
-        case '/reddit/subreddit/comments/hot':
-            getHotComments(queries.subreddit, response);
-            break;
+			case '/reddit/post/comments':
+				getPostComments(queries.subreddit, queries.id, response);
+				break;
 
-        case '/youtube/comments':
-            getCommentsOfVideo(queries.v, response);
-            break;
+			case '/reddit/subreddit/comments/hot':
+				getHotComments(queries.subreddit, response);
+				break;
 
-        case '/youtube/thumbnail':
-            getYoutubeThumbnail(queries.v, response);
-            break;
+			case '/youtube/comments':
+				getCommentsOfVideo(queries.v, response);
+				break;
 
-        case '/youtube/videoRecent':
-            getRecentVideo(queries.user, response);
-            break;
+			case '/youtube/thumbnail':
+				getYoutubeThumbnail(queries.v, response);
+				break;
 
-        default:
-            response = Serve404(request, response);
+			case '/youtube/videoRecent':
+				getRecentVideo(queries.user, response);
+				break;
+
+			default:
+				response = Serve404(request, response);
+		}
     }
+    catch(e) {
+        response.statusCode = 400;
+        response.write(e);
+        response.end();
+    }
+
 });
 pixelServer.listen(8080, function () {
     console.log('pixelServer listening on port 8080.');
@@ -104,6 +116,13 @@ function requestTwitterFriends(username, response) {
     });
 }
 
+function requestRecentTweets(username, response) {
+    const twitter = require('./twitter-module');
+    twitter.fetchRecentTweets(username, function (result) {
+        response.write(JSON.stringify(result));
+        response.end();
+    });
+}
 
 // REDDIT QUERIES
 // ---------------
