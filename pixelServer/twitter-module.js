@@ -5,12 +5,25 @@
 let appkey = require('./environment').getTwitterKey();  // Retrieves application-only key from config
 let bearerToken = null;     // Authentication token
 let queuedArgs = [];        // Queued paths to query after another bearer token is retrieved.
+const apiVersion = '1.1';
 
 // TWITTER API REQUESTS
 // --------------------
 
+/**
+ * Fetches the first page of most recent tweets from the provided account name
+ * @param username  The twitter username to pull from
+ * @param callback  The result will be sent here as an array
+ */
+exports.fetchRecentTweets = function(username, callback) {
+    const url = `/${apiVersion}/statuses/user_timeline.json?screen_name=${username}`;
+    makeAuthorizedGet(url, function (result) {
+        callback(result);
+    });
+};
+
 exports.RetrieveFriends = function (username, callback) {
-    makeAuthorizedGet(`/1.1/friends/ids.json?screen_name=${username}`, function (result) {
+    makeAuthorizedGet(`/${apiVersion}/friends/ids.json?screen_name=${username}`, function (result) {
         if (result.error) {
             callback(result);
             return;
@@ -106,7 +119,6 @@ function makeAuthorizedGet (path, callback) {
                 status: response.statusCode,
                 statusMessage: response.statusMessage,
             });
-            console.log('response:', response);
             return;
         }
         parseResponse(response, function (result) {
@@ -181,6 +193,7 @@ function getTwitterToken (callback) {
                      // callback(bearerToken); // with queued args
                  }
                  else {
+                     console.log('Result of access token retrieval:', result);
                      throw new Error('An error was encountered when retrieving access token.');
                  }
              });
