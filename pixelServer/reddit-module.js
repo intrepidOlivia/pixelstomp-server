@@ -66,6 +66,8 @@ function retrieveAccessToken(callback) {
 
 /**
  * When provided with an appropriate path, sends the API result to the callback.
+ * @param path  The path to send the request to (appended to https://oauth.reddit.com).
+ * @param callback is passed in the result of the authorized query.
  */
 function makeAuthorizedRequest(path, callback) {
     // First check to make sure there is an access token and it is still valid
@@ -105,6 +107,9 @@ function makeAuthorizedRequest(path, callback) {
         parseResponse(response)
             .then((result) => {
                 callback(result);
+            })
+            .catch((error) => {
+                callback({ error, response });
             });
     });
     request.on('error', function (err) {
@@ -265,6 +270,28 @@ exports.getTrackedVotes = function (subreddit, id, callback) {
     });
 }
 
+/**
+ * Retrieves the current Hot posts in the specified subreddit.
+ * @param subreddit
+ * @returns {Promise<Array<Object>>} Resolves with an array of objects containing post attributes
+ */
+exports.getHotPosts = function(subreddit) {
+    return new Promise((resolve, reject) => {
+		makeAuthorizedRequest(`/r/${subreddit}/hot`, (result) => {
+		    const hotPosts = result.data.children.map((post) => {
+                return {
+                    author: post.data.author,
+                    title: post.data.title,
+                    num_comments: post.data.num_comments,
+                    permalink: post.data.permalink,
+                    id: post.data.id,
+                };
+            });
+		    resolve(hotPosts);
+        });
+    });
+};
+
 function gatherComments(result) {
     let commentSet = [];
     // hold all the comments in an array of strings.
@@ -332,8 +359,13 @@ function getRecentComments(username) {
     });
 }
 
+/**
+ * Retrieves a sorted array of subreddits that are comment-interacting most with the subreddit's posters,
+ * sorted by interaction frequency.
+ * @param subreddit <String>
+ * @param callback is passed in an array of <{ subreddit <String>, count <Integer> }>
+ */
 exports.getSubredditorsInfo = function (subreddit, callback) {
-// function getSubredditorsInfo (subreddit, callback) {
     getSubredditIntersections(subreddit)
         .then((subMap) => {
             let subArray = Object.keys(subMap).sort(function (a, b) {
@@ -351,6 +383,12 @@ exports.getSubredditorsInfo = function (subreddit, callback) {
         });
 }
 
+/**
+ * Takes the most recently prominent posters in a subreddit,
+ * and makes a quantified map of all subreddits that the user has commented on recently.
+ * @param subreddit <String>    The name of a subreddit
+ * @returns {Promise<any>} Map <{ subreddit <string>: commentFrequency <int>}>
+ */
 function getSubredditIntersections(subreddit) {
     return new Promise(function (resolve, reject) {
         // Retrieve list of "hot" posts right now
@@ -401,6 +439,12 @@ function trackVoteRhythm(post) {
 
 }
 
+/**
+ * Retrieves all comments in a reddit thread.
+ * @param subreddit <String> name of a subreddit
+ * @param id <String> ID of a thread
+ * @param callback is passed in an array of threads, which are themselves arrays of comments.
+ */
 exports.getAllPostComments = function(subreddit, id, callback) {
     makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
         processPostComments(result, callback);
@@ -409,6 +453,7 @@ exports.getAllPostComments = function(subreddit, id, callback) {
 
 /**
  * @param result The result of a call to /r/subreddit/comments/id
+ * @param callback is passed in an array of threads, which are themselves arrays of comment objects.
  */
 function processPostComments(result, callback) {
     let threads = [];
@@ -495,6 +540,12 @@ function getAllReplies(comment, callback) {
     });
 }
 
+/**
+ *
+ * @param comment   A comment entity, as described by the Reddit API: https://www.reddit.com/dev/api/#GET_comments_{article}
+ * @param thread    An array of comment objects
+ * @returns {*}     Thread with comment pushed onto it
+ */
 function pushCommentToThread(comment, thread) {
     if (comment.kind == 'more') {
         console.log('number of some comments that were not retrieved:', comment.data.children.length);
@@ -514,7 +565,7 @@ function pushCommentToThread(comment, thread) {
 /**
  * @param {string} link  The fullname of a post
  * @param {array} ids   Strings of ID36's of comments
- * @returns {Promise<any>} Resolves with an array of comment objects retrieved from the reddit API.
+ * @returns  Resolves with an array of comment objects retrieved from the reddit API.
  */
 function getMoreChildren(link, ids, callback) {
     // TODO: Make this function not send back any comments that are of kind 'more'
@@ -568,6 +619,11 @@ function getHotPosts(subreddit, callback) {
     });
 }
 
+/**
+ *
+ * @param subreddit
+ * @param callback
+ */
 exports.getHotPostComments = function (subreddit, callback) {
     let allComments = [];
     getHotPosts(subreddit, function (result) {
