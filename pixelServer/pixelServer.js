@@ -209,7 +209,12 @@ function requestCoordinates(location, response) {
 
 function getCommentsOfVideo(videoID, response) {
   const youtube = require('./youtube-module');
-  youtube.getAllComments(videoID, function (comments) {
+  youtube.getAllComments(videoID, function (comments, err) {
+  	if (err) {
+  		response.statusCode = 400;
+  		response.write(err);
+  		response.end();
+	}
     response.write(JSON.stringify(comments));
     response.end();
   });

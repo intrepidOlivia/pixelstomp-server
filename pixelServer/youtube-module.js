@@ -8,8 +8,13 @@ const ROOT_URL = 'content.googleapis.com';
 * followed by each subsequent reply.
 */
 exports.getAllComments = function (videoID, callback) {
-	getCommentThreads(videoID, function (result) {
-		if (!result.length) {
+	getCommentThreads(videoID, function (result, err) {
+		if (err) {
+			callback(err, err);
+			return;
+		}
+
+		if (!result.items.length) {
 			console.log('Whats wrong with result?', result);
 		}
 
@@ -111,7 +116,6 @@ exports.getRecentVideo = function(user, callback) {
 };
 
 function makeHTTPSRequest(path, callback) {
-	console.log("making HTTP request to: ", path);
 	const https = require('https');
 	const options = {
 		method: 'GET',
@@ -127,11 +131,12 @@ function makeHTTPSRequest(path, callback) {
 			})
 			.catch((err) => {
 				console.log('Error while parsing response:', err);
+				callback(err, err);
 			});
 	});
 	request.on('error', function (err) {
 		console.log('An error was encountered with the following request:', request);
-		throw err;
+		callback(err);
 	});
 	request.end();
 }
@@ -140,15 +145,15 @@ function parseResponse(response) {
 	return new Promise(function (resolve, reject) {
 			let result = '';
 			response.on('data', (chunk) => {
-					result += chunk;
+				result += chunk;
 			});
 			response.on('end', function () {
-					try {
-							resolve(JSON.parse(result));
-					}
-					catch (e) {
-							reject(result);
-					}
+				try {
+						resolve(JSON.parse(result));
+				}
+				catch (e) {
+						reject(result);
+				}
 			});
 	});
 }
