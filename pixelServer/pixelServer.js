@@ -177,10 +177,14 @@ function getSubredditIntersection(subreddit, response) {
 
 function getPostComments(subreddit, postID, response) {
     let reddit = require('./reddit-module');
-    reddit.getAllPostComments(subreddit, postID, function (result) {
-        response.write(JSON.stringify(result));
-        response.end();
-    });
+    reddit.getAllPostComments(subreddit, postID)
+		.then((result) => {
+			response.write(JSON.stringify(result));
+			response.end();
+		}).catch( e => {
+			response.statusCode = 400;
+			response.write(`An error occurred when requesting data: ${JSON.stringify(e)}`);
+		});
 }
 
 /**

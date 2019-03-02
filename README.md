@@ -41,10 +41,10 @@ Note: Use of this module currently requires that a module called `reddit-config.
 * id {string}: the post's base-36 id, found in the post's URL: `r/[subreddit]/comments/[id]/[title-of-post]`
 * callback {function}: is passed a single argument, an object with the following structure: {comments (array of comment items), link (object containing information about the post)}
 
-`getAllPostComments(subreddit, id, callback)`: Retrieves all comments from a reddit post.
+`getAllPostComments(subreddit, id)`: Retrieves all comments from a reddit post.
 * subreddit {string}: the name of the subreddit
 * id {string}: the post's base-36 id, found in the post's URL: `r/[subreddit]/comments/[id]/[title-of-post]`
-* callback {function}: is passed a single argument, an array. Each element of the array is a comment thread, each starting with a root comment on the post itself.
+Returns a Promise that resolves with an array. Each element of the array is a comment thread, each starting with a root comment on the post itself.
 
 `getSubredditorsInfo(subreddit, callback)`: Retrieves a weighted list of intersections of redditor activity for a given subreddit.
 

@@ -446,8 +446,10 @@ function trackVoteRhythm(post) {
  * @param callback is passed in an array of threads, which are themselves arrays of comments.
  */
 exports.getAllPostComments = function(subreddit, id, callback) {
-    makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
-        processPostComments(result, callback);
+    return new Promise((resolve, reject) => {
+		makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
+			processPostComments(result, resolve);
+		});
     });
 }
 
@@ -456,6 +458,11 @@ exports.getAllPostComments = function(subreddit, id, callback) {
  * @param callback is passed in an array of threads, which are themselves arrays of comment objects.
  */
 function processPostComments(result, callback) {
+    if (result.error) {
+        callback({ error: result });
+        return;
+    }
+
     let threads = [];
     let comments = result[1];
     let toProcess = comments.data.children.length;
@@ -633,13 +640,16 @@ exports.getHotPostComments = function (subreddit, callback) {
         const postsToProcess = result.length;
         let postsProcessed = 0;
         result.forEach((post) => {
-            exports.getAllPostComments(subreddit, post.data.id, function (result) {
-                postsProcessed++;
-                allComments = allComments.concat(result);
-                if (postsProcessed == postsToProcess) {
-                    callback && callback(allComments);
-                }
-            });
+            exports.getAllPostComments(subreddit, post.data.id)
+                .then((result) => {
+                    postsProcessed++;
+                    allComments = allComments.concat(result);
+                    if (postsProcessed == postsToProcess) {
+                        callback && callback(allComments);
+                    }
+                }).catch((error) => {
+                    callback && callback({ error: error });
+                });
         });
     });
 }
