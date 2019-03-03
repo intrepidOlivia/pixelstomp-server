@@ -66,6 +66,16 @@ var pixelServer = http.createServer(function (request, response) {
 				getHotComments(queries.subreddit, response);
 				break;
 
+			case '/reddit/subreddit/activeRedditors':
+				switch (queries.scope) {
+					case 'hot':
+						getActiveHotRedditors(queries.subreddit, response);
+						break;
+					default:
+						Serve404(request, response);
+				}
+				break;
+
 			case '/youtube/comments':
 				getCommentsOfVideo(queries.v, response);
 				break;
@@ -79,7 +89,7 @@ var pixelServer = http.createServer(function (request, response) {
 				break;
 
 			default:
-				response = Serve404(request, response);
+				Serve404(request, response);
 		}
     }
     catch(e) {
@@ -184,6 +194,22 @@ function getPostComments(subreddit, postID, response) {
 		}).catch( e => {
 			response.statusCode = 400;
 			response.write(`An error occurred when requesting data: ${JSON.stringify(e)}`);
+			response.end();
+		});
+}
+
+function getActiveHotRedditors(subreddit, response) {
+
+	let reddit = require('./reddit-module');
+	reddit.getActiveHotRedditors(subreddit)
+		.then((redditorMap) => {
+			response.write(JSON.stringify(redditorMap));
+			response.end();
+		})
+		.catch((verboseError) => {
+			response.statusCode = 400;
+			response.write(JSON.stringify(verboseError));
+			response.end();
 		});
 }
 
@@ -272,17 +298,14 @@ function Serve404(request, response) {
         rs.on('error', function (err) {
             response.write('Not found.');
             response.end();
-            return response;
         });
         rs.pipe(response);
         rs.on('end', function () {
             response.end();
-            return response;
         });
     }
     catch (err) {
         response.write('Not found.');
         response.end();
-        return response;
     }
 }

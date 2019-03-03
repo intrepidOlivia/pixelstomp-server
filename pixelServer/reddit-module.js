@@ -5,7 +5,7 @@ let APP_SECRET = require('./reddit-config').getAppSecret();
 let USER_AGENT = 'pixelstomp-reddit-querier by poplopo';
 
 // REDDIT CONSTANTS
-var types = {
+var TYPES = {
     COMMENT: 't1',
     ACCOUNT: 't2',
     LINK: 't3',
@@ -88,7 +88,6 @@ function makeAuthorizedRequest(path, callback) {
     }
 
     if (!path) {
-        console.log('shifting queued args.');
         path = queuedArgs.shift();
     }
 
@@ -137,7 +136,6 @@ function postAuthorizedRequest(path, callback, postQuery) {
     }
 
     if (!path) {
-        console.log('shifting queued args.');
         path = queuedArgs.shift();
     }
 
@@ -268,7 +266,35 @@ exports.getTrackedVotes = function (subreddit, id, callback) {
         trackVoteRhythm(result);
         callback('Votes started to track.');
     });
-}
+};
+
+/**
+ * When provided with an array of posts, retrieves all comments within that post
+ * @param posts Array of { subreddit, }
+ * @returns {Promise<any>}
+ */
+exports.getAllCommentsInPosts = function(posts) {
+    return new Promise((resolve, reject) => {
+        const allComments = [];
+        const totalPosts = posts.length;
+        let p = 0;
+        posts.forEach((post) => {
+            exports.getAllPostComments(post.subreddit, post.id)
+                .then((commentThreads) => { // commentThreads: Array of <Array of <{ body, id, author, score, permalink }>>
+                    if (commentThreads.length > 0) {
+						allComments.push(commentThreads);
+                    }
+					p++;
+					if (p >= totalPosts) {
+					    resolve(allComments);
+                    }
+				})
+                .catch((e) => {
+                    reject(e);
+                });
+        });
+    });
+};
 
 /**
  * Retrieves the current Hot posts in the specified subreddit.
@@ -285,6 +311,7 @@ exports.getHotPosts = function(subreddit) {
                     num_comments: post.data.num_comments,
                     permalink: post.data.permalink,
                     id: post.data.id,
+                    subreddit: post.data.subreddit,
                 };
             });
 		    resolve(hotPosts);
@@ -451,7 +478,7 @@ exports.getAllPostComments = function(subreddit, id, callback) {
 			processPostComments(result, resolve);
 		});
     });
-}
+};
 
 /**
  * @param result The result of a call to /r/subreddit/comments/id
@@ -563,6 +590,7 @@ function pushCommentToThread(comment, thread) {
         id: comment.data.id,
         author: comment.data.author,
         score: comment.data.score,
+        parent_id: comment.data.parent_id,
         permalink: `https://www.reddit.com/${comment.data.permalink}`,
         created: comment.data.created
     });
@@ -690,7 +718,46 @@ exports.getCommenterPosts = function (subreddit, callback) {
             });
         });
     });
-}
+};
+
+/**
+ * Generates a map of the most active commenters in the Hot posts of a subreddit
+ * @param subreddit
+ * @returns {Promise<{ [redditor]: commentCount<int>}>}
+ */
+exports.getActiveHotRedditors = function(subreddit) {
+    return new Promise((resolve, reject) => {
+        const redditorActivityMap = {};
+        let totalComments = 0;
+		exports.getHotPosts(subreddit)
+            .then((posts) => {
+				exports.getAllCommentsInPosts(posts)
+					.then((allComments) => {
+						allComments.forEach((post) => {
+							post.forEach((thread) => {
+								thread.forEach((comment) => {
+									totalComments++;
+									if (redditorActivityMap[comment.author]) {
+										redditorActivityMap[comment.author]++;
+									} else {
+										redditorActivityMap[comment.author] = 1;
+									}
+								});
+							});
+						});
+						resolve(redditorActivityMap);
+					})
+            })
+            .catch((e) => {
+				reject({
+					error: e,
+					totalComments,
+					redditorActivityMap,
+				});
+            });
+
+    });
+};
 
 function formatPost(post) {
     return {
@@ -716,3 +783,39 @@ function getHotRedditorPosts(username, callback) {
 }
 
 // TODO: Add functionality to see if a redditor has an unusually high frequency of interaction with another redditor
+
+/**
+ * Converts the fullname of an item into an Object { id, type }
+ * @param fullname
+ * @returns {Object<{ id, type }>}
+ */
+function parseFullName(fullname) {
+    const prefix = fullname.substring(0, 2);
+    const item = {
+        id: fullname,
+        type: null,
+    };
+    switch (prefix) {
+        case TYPES.COMMENT:
+            item.type = 'COMMENT';
+            break;
+		case TYPES.ACCOUNT:
+		    item.type = 'ACCOUNT';
+			break;
+		case TYPES.AWARD:
+		    item.type = 'AWARD';
+			break;
+		case TYPES.LINK:
+		    item.type = 'LINK';
+			break;
+		case TYPES.MESSAGE:
+		    item.type = 'MESSAGE';
+			break;
+        case TYPES.SUBREDDIT:
+            item.type = 'SUBREDDIT';
+            break;
+        default:
+            return undefined;
+    }
+    return item;
+}
