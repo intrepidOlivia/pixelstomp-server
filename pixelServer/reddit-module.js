@@ -209,7 +209,7 @@ exports.searchForRedditor = function(username, callback) {
  */
 exports.getAllComments = function(username, callback) {
     //send the request to retrieve the first page of comments
-    console.log(`Retrieving comments for redditor ${username}:`);
+    console.log(`Retrieving comments for redditor ${username}.`);
     let path = `/user/${username}/comments`;
     makeAuthorizedRequest(path, function (result) {
         if (typeof result === 'string') {
@@ -240,7 +240,9 @@ exports.getAllComments = function(username, callback) {
             callback(commentSet);
         }
     });
-}
+};
+
+
 
 exports.getPost = function (subreddit, id, callback) {
     let path = `/r/${subreddit}/comments/${id}`
@@ -378,13 +380,13 @@ function getNextComments(path, after, comments) {
     });
 }
 
-function getRecentComments(username) {
+exports.getRecentComments = function (username) {
     return new Promise(function (resolve, reject) {
         makeAuthorizedRequest(`/user/${username}/comments`, function (result) {
             resolve(gatherComments(result));
         });
     });
-}
+};
 
 /**
  * Retrieves a sorted array of subreddits that are comment-interacting most with the subreddit's posters,
@@ -434,7 +436,7 @@ function getSubredditIntersections(subreddit) {
                 counter++;
 
                 // get user's most popular subreddits
-                getRecentComments(redditor)
+                exports.getRecentComments(redditor)
                     .then(comments => {
                         counter--;
                         comments.forEach((comment) => {
@@ -477,6 +479,32 @@ exports.getAllPostComments = function(subreddit, id, callback) {
 		makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
 			processPostComments(result, resolve);
 		});
+    });
+};
+
+/**
+ * Retrieves the first page of comments on a given post (no replies)
+ * @param subreddit
+ * @param postID
+ * @returns {Promise<Array<Comment>>}
+ */
+exports.getPostComments = function(subreddit, postID) {
+    return new Promise((resolve, reject) => {
+        makeAuthorizedRequest(`/r/${subreddit}/comments/${postID}`, function (result) {
+            const comments = [];
+            result.forEach((commentArray) => {
+                commentArray.data.children.forEach((comment) => {
+					comments.push({
+                        author: comment.data.author,
+                        body: comment.data.body,
+                        score: comment.data.score,
+                        subreddit: comment.data.subreddit,
+					});
+                });
+
+            });
+            resolve(comments);
+        });
     });
 };
 
@@ -789,7 +817,7 @@ function getHotRedditorPosts(username, callback) {
  * @param fullname
  * @returns {Object<{ id, type }>}
  */
-function parseFullName(fullname) {
+exports.parseFullName = function (fullname) {
     const prefix = fullname.substring(0, 2);
     const item = {
         id: fullname,

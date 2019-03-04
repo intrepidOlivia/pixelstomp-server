@@ -35,7 +35,7 @@ var pixelServer = http.createServer(function (request, response) {
 				break;
 
 			case '/reddit/comments':
-				requestRedditorComments(queries.user, response);
+				requestRedditorComments(queries.user, queries.scope, response);
 				break;
 
 			case '/reddit/wordcloud':
@@ -59,7 +59,7 @@ var pixelServer = http.createServer(function (request, response) {
 				break;
 
 			case '/reddit/post/comments':
-				getPostComments(queries.subreddit, queries.id, response);
+				getPostComments(queries.subreddit, queries.id, response, queries.scope);
 				break;
 
 			case '/reddit/subreddit/comments/hot':
@@ -72,7 +72,7 @@ var pixelServer = http.createServer(function (request, response) {
 						getActiveHotRedditors(queries.subreddit, response);
 						break;
 					default:
-						Serve404(request, response);
+						Serve404(response);
 				}
 				break;
 
@@ -89,7 +89,7 @@ var pixelServer = http.createServer(function (request, response) {
 				break;
 
 			default:
-				Serve404(request, response);
+				Serve404(response);
 		}
     }
     catch(e) {
@@ -145,12 +145,30 @@ function requestCommenterPosts(subreddit, response) {
     });
 }
 
-function requestRedditorComments(user, response) {
+function requestRedditorComments(user, scope = 'all', response) {
     let reddit = require('./reddit-module');
-    reddit.getAllComments(user, function (result) {
-        response.write(JSON.stringify(result));
-        response.end();
-    });
+    switch (scope) {
+		case 'all':
+			reddit.getAllComments(user, function (result) {
+				response.write(JSON.stringify(result));
+				response.end();
+			});
+			break;
+		case 'recent':
+			reddit.getRecentComments(user)
+				.then((result) => {
+					response.write(JSON.stringify(result));
+					response.end();
+				})
+				.catch((error) => {
+					response.statusCode = 400;
+					response.write(JSON.stringify(error));
+					response.end();
+				});
+			break;
+		default:
+			Serve404(response);
+	}
 }
 
 function generateWordCloud(user, response) {
@@ -163,7 +181,6 @@ function generateWordCloud(user, response) {
 function getRedditorInfo(user, response) {
     let reddit = require('./reddit-module');
     reddit.searchForRedditor(user, function (result) {
-        console.log('writing response with result:', result);
         response.write(result);
         response.end();
     });
@@ -185,17 +202,36 @@ function getSubredditIntersection(subreddit, response) {
     });
 }
 
-function getPostComments(subreddit, postID, response) {
+function getPostComments(subreddit, postID, response, scope = 'all') {
     let reddit = require('./reddit-module');
-    reddit.getAllPostComments(subreddit, postID)
-		.then((result) => {
-			response.write(JSON.stringify(result));
-			response.end();
-		}).catch( e => {
-			response.statusCode = 400;
-			response.write(`An error occurred when requesting data: ${JSON.stringify(e)}`);
-			response.end();
-		});
+
+    switch (scope) {
+		case 'all':
+			reddit.getAllPostComments(subreddit, postID)
+				.then((result) => {
+					response.write(JSON.stringify(result));
+					response.end();
+				}).catch( e => {
+				response.statusCode = 400;
+				response.write(`An error occurred when requesting data: ${JSON.stringify(e)}`);
+				response.end();
+			});
+			break;
+		case 'hot':
+			reddit.getPostComments(subreddit, postID)
+				.then((result) => {
+					response.write(JSON.stringify(result));
+					response.end();
+				})
+				.catch((error) => {
+					response.statusCode = 400;
+					response.write(JSON.stringify({ error }));
+					response.end();
+				});
+			break;
+		default:
+			Serve404(response);
+	}
 }
 
 function getActiveHotRedditors(subreddit, response) {
@@ -290,7 +326,7 @@ function ServePage(request, response) {
 
 }
 
-function Serve404(request, response) {
+function Serve404(response) {
     response.writeHead(404, 'Not found.');
     try {
         var fs = require('fs');
