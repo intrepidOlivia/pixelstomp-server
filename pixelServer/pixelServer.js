@@ -93,8 +93,9 @@ var pixelServer = http.createServer(function (request, response) {
 		}
     }
     catch(e) {
+    	console.log('Unknown error:', e);
         response.statusCode = 400;
-        response.write(e);
+        response.write(JSON.stringify(e));
         response.end();
     }
 
@@ -275,10 +276,16 @@ function requestCoordinates(location, response) {
 
 function getCommentsOfVideo(videoID, response) {
   const youtube = require('./youtube-module');
-  youtube.getAllComments(videoID, function (comments) {
-    response.write(JSON.stringify(comments));
-    response.end();
-  });
+  youtube.getAllComments(videoID)
+	  .then(function (comments) {
+		response.write(JSON.stringify(comments));
+		response.end();
+	  })
+	  .catch((err) => {
+	  	response.statusCode = 400;
+	  	response.write(JSON.stringify(err));
+	  	response.end();
+	  });
 }
 
 function getYoutubeThumbnail(videoID, response) {

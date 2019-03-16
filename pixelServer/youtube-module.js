@@ -7,69 +7,95 @@ const ROOT_URL = 'content.googleapis.com';
 * Each thread is an array of comment objects. The first element of the thread array is always the first comment,
 * followed by each subsequent reply.
 */
-exports.getAllComments = function (videoID, callback) {
-	getCommentThreads(videoID, function (result) {
-		if (!result.length) {
-			console.log('Whats wrong with result?', result);
-		}
+exports.getAllComments = function (videoID) {
+	return new Promise((resolve, reject) => {
+		getCommentThreads(videoID)
+			.then(function (result) {
+				if (!result.items.length) {
+					console.log('Whats wrong with result?', result);
+				}
 
-		// For each thread, get all comments
-		let threadArray = [];
-		const threadsToProcess = result.items.length;
-		let threadsProcessed = 0;
+				// For each thread, get all comments
+				let threadArray = [];
+				const threadsToProcess = result.items.length;
+				let threadsProcessed = 0;
+				let commentCount = 0;
 
-		result.items.forEach((commentHead) => {
-			// console.log('structure of commentHead:', commentHead);
-			let commentThread = [];
-			commentThread[0] = commentHead.snippet.topLevelComment;
-			if (commentHead.snippet.totalReplyCount > 0) {
-				getAllReplies(commentHead.id, function (replyArray) {
-					commentThread = commentThread.concat(replyArray);
-					threadArray.push(commentThread);
-					threadsProcessed += 1;
+				result.items.forEach((commentHead) => {
+					let commentThread = [];
+					commentThread[0] = commentHead.snippet.topLevelComment;
+					if (commentHead.snippet.totalReplyCount > 0) {
+						getAllReplies(commentHead.id)
+							.then(function (replyArray) {
+								commentThread = commentThread.concat(replyArray);
+								threadArray.push(commentThread);
+								commentCount += commentThread.length;
+								threadsProcessed += 1;
 
-					if (threadsProcessed === threadsToProcess) {
-						callback(threadArray);
+								if (commentCount >= 1000) {	// Setting a limit because Google shuts us down otherwise
+									resolve(threadArray);
+								}
+
+								if (threadsProcessed === threadsToProcess) {
+									resolve(threadArray);
+								}
+							});
+					} else {	// if there are no additional replies to the comment
+						threadArray.push(commentThread);
+						threadsProcessed += 1;
+
+						if (threadsProcessed === threadsToProcess) {
+							resolve(threadArray);
+						}
 					}
 				});
-			} else {	// if there are no additional replies to the comment
-				threadArray.push(commentThread);
-				threadsProcessed += 1;
+			});
+	});
+};
 
-				if (threadsProcessed === threadsToProcess) {
-					callback(threadArray);
-				}
+// Will return an array of comment arrays, with only the head comment available.
+function getCommentThreads(videoID) {
+	return new Promise((resolve, reject) => {
+		const queryString = `part=snippet&videoId=${videoID}&maxResults=100`;
+		const url = `/commentThreads?${queryString}`;
+		// makeHTTPSRequest(url, callback);
+		// TODO: Add pagination support
+		makeHTTPSRequest(url, function (result) {
+			if (result.nextPageToken) {
+				let resultArray = [result];
+				pageToEnd(url, result.nextPageToken, resultArray, function (finalResultArray) {
+					// Combine all results?
+					let items = [];
+					finalResultArray.forEach((threadParent) => {
+						items = items.concat(threadParent.items);
+					});
+					resolve({ items });
+				});
+			} else {
+				resolve(result);
 			}
 		});
 	});
 }
 
-// Will return an array of comment arrays, with only the head comment available.
-function getCommentThreads(videoID, callback) {
-	const queryString = `part=snippet&videoId=${videoID}&maxResults=100`;
-	const url = `/commentThreads?${queryString}`;
-	// makeHTTPSRequest(url, callback);
-	// TODO: Add pagination support
-	makeHTTPSRequest(url, function (result) {
-		if (result.nextPageToken) {
-			let resultArray = [result];
-			pageToEnd(url, result.nextPageToken, resultArray, function (finalResultArray) {
-				// Combine all results?
-				let items = [];
-				finalResultArray.forEach((threadParent) => {
-					items = items.concat(threadParent.items);
-				});
-				callback({ items });
-			});
-		} else {
-			callback(result);
-		}
-	});
-}
-
 // Adds subsequent results to an array as it pages through.
 function pageToEnd(url, nextPageToken, resultArray, callback) {
+	let itemCount = 0;
+	resultArray.forEach((result) => {
+		if (result.items) {
+			itemCount += result.items.length;
+		}
+	});
 	makeHTTPSRequest(`${url}&pageToken=${nextPageToken}`, function (result) {
+		if (result.items) {
+			itemCount += result.items.length;
+		}
+
+		if (itemCount >= 1000) {
+			callback(resultArray);
+			return;
+		}
+
 		if (result.nextPageToken) {
 			resultArray.push(result);
 			pageToEnd(url, result.nextPageToken, resultArray, callback);
@@ -79,16 +105,18 @@ function pageToEnd(url, nextPageToken, resultArray, callback) {
 	});
 }
 
-function getAllReplies(commentID, callback) {
-	const path = '/comments';
-	const queryString = `part=snippet&parentId=${commentID}&maxResults=100`;
-	makeHTTPSRequest(`${path}?${queryString}`, function (result) {
-		// Send full comment array back
-		let replyArray = [];
-		result.items.forEach((comment) => {
-			replyArray.push(comment);
+function getAllReplies(commentID) {
+	return new Promise((resolve, reject) => {
+		const path = '/comments';
+		const queryString = `part=snippet&parentId=${commentID}&maxResults=100`;
+		makeHTTPSRequest(`${path}?${queryString}`, function (result) {
+			// Send full comment array back
+			let replyArray = [];
+			result.items.forEach((comment) => {
+				replyArray.push(comment);
+			});
+			resolve(replyArray);
 		});
-		callback(replyArray);
 	});
 }
 
@@ -111,7 +139,6 @@ exports.getRecentVideo = function(user, callback) {
 };
 
 function makeHTTPSRequest(path, callback) {
-	console.log("making HTTP request to: ", path);
 	const https = require('https');
 	const options = {
 		method: 'GET',
@@ -127,6 +154,7 @@ function makeHTTPSRequest(path, callback) {
 			})
 			.catch((err) => {
 				console.log('Error while parsing response:', err);
+				throw err;
 			});
 	});
 	request.on('error', function (err) {
