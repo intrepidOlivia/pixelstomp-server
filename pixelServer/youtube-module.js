@@ -1,5 +1,6 @@
 const ytKey = require('./environment').getYoutubeKey();
 const ROOT_URL = 'content.googleapis.com';
+const Log = require('./logging');
 
 /**
 * This function will retrieve all comments from a Youtube video (except possibly extremely long reply threads).
@@ -8,6 +9,7 @@ const ROOT_URL = 'content.googleapis.com';
 * followed by each subsequent reply.
 */
 exports.getAllComments = function (videoID) {
+	Log(`Requesting all comments for video:`, videoID);
 	return new Promise((resolve, reject) => {
 		getCommentThreads(videoID)
 			.then(function (result) {

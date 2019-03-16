@@ -1,9 +1,10 @@
 var http = require('http');
 var geocoding = require('./geocoding-module');
+const Log = require('./logging');
 
 var pixelServer = http.createServer(function (request, response) {
     var url = require('url');
-    console.log("Request was received from " + request.headers.referer + ": " + request.url);
+    Log("Request was received from " + request.headers.referer + ": " + request.url);
 
     var reqUrl = url.parse(request.url, true);
     var path = reqUrl.pathname;
@@ -101,10 +102,10 @@ var pixelServer = http.createServer(function (request, response) {
 
 });
 pixelServer.listen(8080, function () {
-    console.log('pixelServer listening on port 8080.');
+    Log('pixelServer listening on port 8080.');
 });
 pixelServer.on('error', function (err) {
-    console.log('The following error has been encountered with the server receiving requests from Pixelstomp: ' + err.message + '\n');
+    Log('The following error has been encountered with the server receiving requests from Pixelstomp: ' + err.message + '\n');
 });
 
 // TWITTER QUERIES
