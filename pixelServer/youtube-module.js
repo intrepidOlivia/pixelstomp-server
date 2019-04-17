@@ -13,15 +13,15 @@ exports.getAllComments = function (videoID) {
 	return new Promise((resolve, reject) => {
 		getCommentThreads(videoID)
 			.then(function (result) {
-				if (!result.items.length) {
-					console.log('Whats wrong with result?', result);
-				}
-
 				// For each thread, get all comments
 				let threadArray = [];
-				const threadsToProcess = result.items.length;
+				const threadsToProcess = result.items ? result.items.length : 0;
 				let threadsProcessed = 0;
 				let commentCount = 0;
+
+				if (result.items.length < 1) {
+					resolve([]);
+				}
 
 				result.items.forEach((commentHead) => {
 					let commentThread = [];
@@ -38,7 +38,7 @@ exports.getAllComments = function (videoID) {
 									resolve(threadArray);
 								}
 
-								if (threadsProcessed === threadsToProcess) {
+								if (threadsProcessed >= threadsToProcess) {
 									resolve(threadArray);
 								}
 							});
@@ -46,7 +46,7 @@ exports.getAllComments = function (videoID) {
 						threadArray.push(commentThread);
 						threadsProcessed += 1;
 
-						if (threadsProcessed === threadsToProcess) {
+						if (threadsProcessed >= threadsToProcess) {
 							resolve(threadArray);
 						}
 					}
@@ -60,7 +60,6 @@ function getCommentThreads(videoID) {
 	return new Promise((resolve, reject) => {
 		const queryString = `part=snippet&videoId=${videoID}&maxResults=100`;
 		const url = `/commentThreads?${queryString}`;
-		// makeHTTPSRequest(url, callback);
 		// TODO: Add pagination support
 		makeHTTPSRequest(url, function (result) {
 			if (result.nextPageToken) {
@@ -128,15 +127,69 @@ exports.getVideoThumbnail = function (videoID, callback) {
 }
 
 exports.getRecentVideo = function(user, callback) {
-	// first, query channels for uploads playlist ID
-	let path = `/channels?id=${user}&part=contentDetails`;
-	makeHTTPSRequest(path, (result) => {
-		const uploads = result.items[0].contentDetails.relatedPlaylists.uploads;
-		// make request for retrieving videos in "uploads" playlist
-		let vidPath = `/playlistItems?playlistId=${uploads}&part=contentDetails&maxResults=1`;
-		makeHTTPSRequest(vidPath, (playListItems) => {
+	getUploadsFromChannel(user, 1)
+		.then((playlistItems) => {
 			callback(playListItems.items[0].contentDetails.videoId);
 		});
+};
+
+function getUploadsFromChannel(channelID, count) {
+	return new Promise((resolve, reject) => {
+		let path = `/channels?id=${channelID}&part=contentDetails`;
+		makeHTTPSRequest(path, (result) => {
+			const uploads = result.items[0].contentDetails.relatedPlaylists.uploads;
+			getRecentUploads(uploads, count)
+				.then((playlistItems) => resolve(playlistItems));
+		});
+	});
+}
+
+/**
+ * @param uploadsID the ID of the playlist that contains a channel's uploads
+ * @param count
+ * @returns {Promise<Object>}
+ */
+function getRecentUploads(uploadsID, count = 10) {
+	return new Promise((resolve, reject) => {
+		let vidPath = `/playlistItems?playlistId=${uploadsID}&part=contentDetails&maxResults=${count}`;
+		makeHTTPSRequest(vidPath, resolve);
+	});
+}
+
+exports.getUserChannelComments = function (user, channel) {
+	return new Promise((resolve, reject) => {
+		// Start by retrieving the last ten videos published by that channel.
+		getUploadsFromChannel(channel, 10)
+			.then((uploads) => {
+				const userComments = [];
+				const videosToCheck = uploads.items.length;
+				let checked = 0;
+				uploads.items.forEach((video) => {
+					const videoID = video.contentDetails.videoId;
+
+					// retrieve all comments for video ID
+					exports.getAllComments(videoID)
+						.then((commentThreads) => {
+							commentThreads.forEach((thread) => {
+								thread.forEach((comment) => {
+									const author = comment.snippet.authorDisplayName;
+
+									if (author.trim() == user.trim()) {
+										userComments.push(comment);
+									}
+								});
+
+							});
+							checked++;
+							if (checked === videosToCheck) {
+								resolve(userComments);
+							}
+						})
+						.catch((e) => {
+							reject(e);
+						});
+				});
+			});
 	});
 };
 
@@ -155,12 +208,12 @@ function makeHTTPSRequest(path, callback) {
 				callback(result);
 			})
 			.catch((err) => {
-				console.log('Error while parsing response:', err);
+				Log('Error while parsing response:', err);
 				throw err;
 			});
 	});
 	request.on('error', function (err) {
-		console.log('An error was encountered with the following request:', request);
+		Log('An error was encountered with the following request:', request);
 		throw err;
 	});
 	request.end();

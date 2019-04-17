@@ -89,6 +89,10 @@ var pixelServer = http.createServer(function (request, response) {
 				getRecentVideo(queries.user, response);
 				break;
 
+			case '/youtube/channelInteractions':
+				getUserChannelComments(queries.user, queries.channel, response);
+				break;
+
 			default:
 				Serve404(response);
 		}
@@ -303,6 +307,21 @@ function getRecentVideo(user, response) {
         response.write(videoID);
         response.end();
     });
+}
+
+function getUserChannelComments(user, channel, response) {
+	const youtube = require('./youtube-module');
+	youtube.getUserChannelComments(user, channel)
+		.then((result) => {
+			response.statusCode = 200;
+			response.write(JSON.stringify(result));
+			response.end();
+		})
+		.catch((error) => {
+			response.statusCode = 400;
+			response.write(JSON.stringify(error));
+			response.end();
+		});
 }
 
 
