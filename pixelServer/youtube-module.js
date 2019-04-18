@@ -193,6 +193,23 @@ exports.getUserChannelComments = function (user, channel) {
 	});
 };
 
+/**
+ * Retrieves the channel that published this specific video ID
+ * @param videoID
+ */
+exports.getVideoChannel = function(videoID) {
+	return new Promise((resolve, reject) => {
+		makeHTTPSRequest(`/videos?part=snippet&id=${videoID}`, (result) => {
+			try {
+				resolve(result.items[0].snippet.channelId)
+			}
+			catch(e) {
+				reject({ error: e, result });
+			}
+		});
+	});
+};
+
 function makeHTTPSRequest(path, callback) {
 	const https = require('https');
 	const options = {
