@@ -129,7 +129,7 @@ exports.getVideoThumbnail = function (videoID, callback) {
 exports.getRecentVideo = function(user, callback) {
 	getUploadsFromChannel(user, 1)
 		.then((playlistItems) => {
-			callback(playListItems.items[0].contentDetails.videoId);
+			callback(playlistItems.items[0].contentDetails.videoId);
 		});
 };
 
