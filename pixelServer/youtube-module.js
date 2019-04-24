@@ -14,7 +14,8 @@ exports.getAllComments = function (videoID) {
 		getCommentThreads(videoID)
 			.then(function (result) {
 				if (result.error) {
-					throw result;
+					reject(result);
+					return;
 				}
 
 				// For each thread, get all comments
