@@ -13,6 +13,10 @@ exports.getAllComments = function (videoID) {
 	return new Promise((resolve, reject) => {
 		getCommentThreads(videoID)
 			.then(function (result) {
+				if (result.error) {
+					throw result;
+				}
+
 				// For each thread, get all comments
 				let threadArray = [];
 				const threadsToProcess = result.items ? result.items.length : 0;
