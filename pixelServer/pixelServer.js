@@ -11,6 +11,7 @@ var pixelServer = http.createServer(function (request, response) {
     var queries = reqUrl.query;
 
     response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Content-Type', 'application/json');
 
     try {
 		switch (path)
