@@ -142,9 +142,13 @@ function getUploadsFromChannel(channelID, count) {
 	return new Promise((resolve, reject) => {
 		let path = `/channels?id=${channelID}&part=contentDetails`;
 		makeHTTPSRequest(path, (result) => {
-			const uploads = result.items[0].contentDetails.relatedPlaylists.uploads;
-			getRecentUploads(uploads, count)
-				.then((playlistItems) => resolve(playlistItems));
+			if (result.items && result.items.length > 0) {
+				const uploads = result.items[0].contentDetails.relatedPlaylists.uploads;
+				getRecentUploads(uploads, count)
+					.then((playlistItems) => resolve(playlistItems));
+			} else {
+				resolve(result);
+			}
 		});
 	});
 }
