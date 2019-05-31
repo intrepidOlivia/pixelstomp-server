@@ -332,7 +332,7 @@ function gatherComments(result) {
         commentSet.push({
             body: comment.data.body,
             subreddit: comment.data.subreddit,
-            permalink: `https://www.reddit.com${comment.data.permalink}`,
+            permalink: `https://old.reddit.com${comment.data.permalink}`,
             created: comment.data.created
         });
     });
@@ -619,7 +619,7 @@ function pushCommentToThread(comment, thread) {
         author: comment.data.author,
         score: comment.data.score,
         parent_id: comment.data.parent_id,
-        permalink: `https://www.reddit.com/${comment.data.permalink}`,
+        permalink: `https://old.reddit.com/${comment.data.permalink}`,
         created: comment.data.created
     });
     return thread;
