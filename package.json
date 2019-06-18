@@ -1,0 +1,23 @@
+{
+  "name": "pixelstomp-server",
+  "version": "1.0.0",
+  "description": "utilities for pixelstomp",
+  "main": "index.js",
+  "dependencies": {
+    "nedb": "^1.8.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/intrepidOlivia/friendly-radius.git"
+  },
+  "author": "intrepidOlivia",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/intrepidOlivia/friendly-radius/issues"
+  },
+  "homepage": "https://github.com/intrepidOlivia/friendly-radius#readme"
+}

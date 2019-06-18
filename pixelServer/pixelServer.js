@@ -64,6 +64,10 @@ var pixelServer = http.createServer(function (request, response) {
 				getPostComments(queries.subreddit, queries.id, response, queries.scope);
 				break;
 
+			case '/reddit/post/replyGraph':
+				getPostReplyGraph(queries.subreddit, queries.id, response);
+				break;
+
 			case '/reddit/subreddit/comments/hot':
 				getHotComments(queries.subreddit, response);
 				break;
@@ -256,6 +260,16 @@ function getActiveHotRedditors(subreddit, response) {
 		.catch((verboseError) => {
 			response.statusCode = 400;
 			response.write(JSON.stringify(verboseError));
+			response.end();
+		});
+}
+
+function getPostReplyGraph(subreddit, id, response) {
+	let reddit = require('./reddit-module');
+	reddit.getAllPostComments(subreddit, id)
+		.then((threads) => {
+			let flatThread = reddit.flattenThreads(threads);
+			response.write(JSON.stringify(reddit.getTopoGraph(reddit.mapThreadComments(flatThread))));
 			response.end();
 		});
 }

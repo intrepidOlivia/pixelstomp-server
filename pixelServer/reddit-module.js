@@ -195,7 +195,7 @@ function parseResponse(response) {
 // REDDIT QUERY FUNCTIONS
 // ---------------------
 
-exports.searchForRedditor = function(username, callback) {
+function searchForRedditor(username, callback) {
     console.log('searching for redditor:', username);
     makeAuthorizedRequest(`/user/${username}/about`, function (result) {
         callback(JSON.stringify(result));
@@ -207,7 +207,7 @@ exports.searchForRedditor = function(username, callback) {
  * @param {string} username
  * @param {function} callback
  */
-exports.getAllComments = function(username, callback) {
+ function getAllComments(username, callback) {
     //send the request to retrieve the first page of comments
     console.log(`Retrieving comments for redditor ${username}.`);
     let path = `/user/${username}/comments`;
@@ -244,7 +244,7 @@ exports.getAllComments = function(username, callback) {
 
 
 
-exports.getPost = function (subreddit, id, callback) {
+function getPost(subreddit, id, callback) {
     let path = `/r/${subreddit}/comments/${id}`
     makeAuthorizedRequest(path, function (result) {
         // The result of this call is an array of objects. The first object in the array (index 0) is information about the post itself.
@@ -263,7 +263,7 @@ exports.getPost = function (subreddit, id, callback) {
     });
 };
 
-exports.getTrackedVotes = function (subreddit, id, callback) {
+function getTrackedVotes(subreddit, id, callback) {
     this.getPost(subreddit, id, function (result) {
         trackVoteRhythm(result);
         callback('Votes started to track.');
@@ -275,13 +275,13 @@ exports.getTrackedVotes = function (subreddit, id, callback) {
  * @param posts Array of { subreddit, }
  * @returns {Promise<any>}
  */
-exports.getAllCommentsInPosts = function(posts) {
+function getAllCommentsInPosts(posts) {
     return new Promise((resolve, reject) => {
         const allComments = [];
         const totalPosts = posts.length;
         let p = 0;
         posts.forEach((post) => {
-            exports.getAllPostComments(post.subreddit, post.id)
+            getAllPostComments(post.subreddit, post.id)
                 .then((commentThreads) => { // commentThreads: Array of <Array of <{ body, id, author, score, permalink }>>
                     if (commentThreads.length > 0) {
 						allComments.push(commentThreads);
@@ -303,7 +303,7 @@ exports.getAllCommentsInPosts = function(posts) {
  * @param subreddit
  * @returns {Promise<Array<Object>>} Resolves with an array of objects containing post attributes
  */
-exports.getHotPosts = function(subreddit) {
+function getHotPosts(subreddit) {
     return new Promise((resolve, reject) => {
 		makeAuthorizedRequest(`/r/${subreddit}/hot`, (result) => {
 		    const hotPosts = result.data.children.map((post) => {
@@ -380,7 +380,12 @@ function getNextComments(path, after, comments) {
     });
 }
 
-exports.getRecentComments = function (username) {
+/**
+ * Gets the most recent comment activity for any given user.
+ * @param username
+ * @returns {Promise<any>}
+ */
+function getRecentComments (username) {
     return new Promise(function (resolve, reject) {
         makeAuthorizedRequest(`/user/${username}/comments`, function (result) {
             resolve(gatherComments(result));
@@ -394,7 +399,7 @@ exports.getRecentComments = function (username) {
  * @param subreddit <String>
  * @param callback is passed in an array of <{ subreddit <String>, count <Integer> }>
  */
-exports.getSubredditorsInfo = function (subreddit, callback) {
+function getSubredditorsInfo (subreddit, callback) {
     getSubredditIntersections(subreddit)
         .then((subMap) => {
             let subArray = Object.keys(subMap).sort(function (a, b) {
@@ -436,7 +441,7 @@ function getSubredditIntersections(subreddit) {
                 counter++;
 
                 // get user's most popular subreddits
-                exports.getRecentComments(redditor)
+                getRecentComments(redditor)
                     .then(comments => {
                         counter--;
                         comments.forEach((comment) => {
@@ -474,7 +479,7 @@ function trackVoteRhythm(post) {
  * @param id <String> ID of a thread
  * @param callback is passed in an array of threads, which are themselves arrays of comments.
  */
-exports.getAllPostComments = function(subreddit, id, callback) {
+function getAllPostComments(subreddit, id, callback) {
     return new Promise((resolve, reject) => {
 		makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
 			processPostComments(result, resolve);
@@ -488,7 +493,7 @@ exports.getAllPostComments = function(subreddit, id, callback) {
  * @param postID
  * @returns {Promise<Array<Comment>>}
  */
-exports.getPostComments = function(subreddit, postID) {
+function getPostRootComments(subreddit, postID) {
     return new Promise((resolve, reject) => {
         makeAuthorizedRequest(`/r/${subreddit}/comments/${postID}`, function (result) {
             const comments = [];
@@ -687,7 +692,7 @@ function getHotPosts(subreddit, callback) {
  * @param subreddit
  * @param callback
  */
-exports.getHotPostComments = function (subreddit, callback) {
+function getHotPostComments(subreddit, callback) {
     let allComments = [];
     getHotPosts(subreddit, function (result) {
         if (result.error) {
@@ -696,7 +701,7 @@ exports.getHotPostComments = function (subreddit, callback) {
         const postsToProcess = result.length;
         let postsProcessed = 0;
         result.forEach((post) => {
-            exports.getAllPostComments(subreddit, post.data.id)
+            getAllPostComments(subreddit, post.data.id)
                 .then((result) => {
                     postsProcessed++;
                     allComments = allComments.concat(result);
@@ -710,8 +715,8 @@ exports.getHotPostComments = function (subreddit, callback) {
     });
 }
 
-exports.getCommenterPosts = function (subreddit, callback) {
-    exports.getHotPostComments(subreddit, function (threads) {
+function getCommenterPosts(subreddit, callback) {
+    getHotPostComments(subreddit, function (threads) {
         let commentsToProcess = 0;
         let commentsProcessed = 0;
         let authorMap = {};
@@ -753,13 +758,13 @@ exports.getCommenterPosts = function (subreddit, callback) {
  * @param subreddit
  * @returns {Promise<{ [redditor]: commentCount<int>}>}
  */
-exports.getActiveHotRedditors = function(subreddit) {
+function getActiveHotRedditors(subreddit) {
     return new Promise((resolve, reject) => {
         const redditorActivityMap = {};
         let totalComments = 0;
-		exports.getHotPosts(subreddit)
+		getHotPosts(subreddit)
             .then((posts) => {
-				exports.getAllCommentsInPosts(posts)
+				getAllCommentsInPosts(posts)
 					.then((allComments) => {
 						allComments.forEach((post) => {
 							post.forEach((thread) => {
@@ -817,11 +822,12 @@ function getHotRedditorPosts(username, callback) {
  * @param fullname
  * @returns {Object<{ id, type }>}
  */
-exports.parseFullName = function (fullname) {
+function parseFullName (fullname) {
     const prefix = fullname.substring(0, 2);
     const item = {
         id: fullname,
         type: null,
+        partial: fullname.substring(3),
     };
     switch (prefix) {
         case TYPES.COMMENT:
@@ -846,4 +852,115 @@ exports.parseFullName = function (fullname) {
             return undefined;
     }
     return item;
+};
+
+/**
+ * Flattens reddit comments on a post into a single array for graph processing
+ * @param postComments
+ */
+function flattenThreads(postComments) {
+    let flat = [];
+    postComments.forEach(thread => {
+        flat = flat.concat(thread);
+    });
+    return flat;
 }
+
+/**
+ *
+ * @param comments	A flat array of comment objects.
+ * @param {userMap, replyGraph, commentMap} outputs of a previous processThread call [Optional]
+ * @returns {{userMap: (*|{}), commentMap: (*|{}), replyGraph: (*|Array)}}
+ */
+function mapThreadComments(comments, { userMap, replyGraph, commentMap } = {}) {
+
+	if (!userMap) {
+		userMap = {};
+	}
+
+	if (!replyGraph) {
+		replyGraph = [];
+	}
+
+	if (!commentMap) {
+		commentMap = {};
+	}
+
+	let usercount = 0;
+
+	comments.forEach(comment => {
+		commentMap[comment.id] = comment;
+
+		if (!userMap[comment.author]) {
+			userMap[comment.author] = usercount;	// { bob: 0, lucy: 1, caroline: 2}
+			replyGraph[usercount] = [comment.id];	// [['comment1']] (bob has responded to comment1)
+			usercount++;
+		} else {
+			replyGraph[userMap[comment.author]].push(comment.id) // [['comment1', 'comment2']] (bob has responded to comment1 and comment2)
+		}
+	});
+
+	return {
+		userMap: userMap,
+		commentMap: commentMap,
+		replyGraph,
+	}
+}
+
+/**
+ *
+ * @param commentMap A map with keys: comment id, value: comment
+ * @param userMap A map with keys: authorID, value: index
+ * @param replyGraph A graph with each index representing an author, pointing to every comment id they've responded to.
+ * @returns {{[p: string]: *}[]}
+ */
+function getTopoGraph({commentMap, userMap, replyGraph}) {
+	const countMap = {};
+
+	for (let i = 0; i < replyGraph.length; i++) {	// users
+		for (let j = 0; j < replyGraph[i].length; j++) {	// users replied to
+
+
+			const commentID = replyGraph[i][j];
+			const parentID = parseFullName(commentMap[commentID].parent_id).partial;
+
+			if (commentMap[parentID]) {
+				const parentAuthor = commentMap[parentID].author;
+				if (countMap[parentAuthor]) {
+					countMap[parentAuthor] += 1;
+				} else {
+					countMap[parentAuthor] = 1;
+				}
+			}
+		}
+	}
+
+	return Object.keys(countMap).sort((a, b) => {
+		if (countMap[a] == countMap[b]) {
+			return 0;
+		}
+
+		if (countMap[a] < countMap[b]) {
+			return 1;
+		}
+
+		return -1;
+	}).map(key => ({[key]: countMap[key]}));
+}
+
+module.exports = {
+    flattenThreads,
+	getActiveHotRedditors,
+    getAllComments,
+	getAllPostComments,
+	getCommenterPosts,
+	getHotPostComments,
+    getPost,
+	getPostComments: getPostRootComments,
+	getRecentComments,
+	getSubredditorsInfo,
+	getTopoGraph,
+    getTrackedVotes,
+	mapThreadComments,
+    searchForRedditor,
+};
