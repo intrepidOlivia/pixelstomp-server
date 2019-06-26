@@ -945,7 +945,7 @@ function getTopoGraph({commentMap, userMap, replyGraph}) {
 		}
 
 		return -1;
-	}).map(key => ({[key]: countMap[key]}));
+	}).map(key => [key, countMap[key]]);
 }
 
 module.exports = {
