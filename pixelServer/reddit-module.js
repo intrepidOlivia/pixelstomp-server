@@ -477,9 +477,8 @@ function trackVoteRhythm(post) {
  * Retrieves all comments in a reddit thread.
  * @param subreddit <String> name of a subreddit
  * @param id <String> ID of a thread
- * @param callback is passed in an array of threads, which are themselves arrays of comments.
  */
-function getAllPostComments(subreddit, id, callback) {
+function getAllPostComments(subreddit, id) {
     return new Promise((resolve, reject) => {
 		makeAuthorizedRequest(`/r/${subreddit}/comments/${id}`, function (result) {
 			processPostComments(result, resolve);
@@ -681,29 +680,33 @@ function handleManyMoreChildren(link, ids, callback) {
 /**
  *
  * @param subreddit
- * @param callback
  */
-function getHotPostComments(subreddit, callback) {
-    let allComments = [];
-    getHotPosts(subreddit, function (result) {
-        if (result.error) {
-            callback(result);
-        }
-        const postsToProcess = result.length;
-        let postsProcessed = 0;
-        result.forEach((post) => {
-            getAllPostComments(subreddit, post.data.id)
-                .then((result) => {
-                    postsProcessed++;
-                    allComments = allComments.concat(result);
-                    if (postsProcessed == postsToProcess) {
-                        callback && callback(allComments);
-                    }
-                }).catch((error) => {
-                    callback && callback({ error: error });
-                });
-        });
-    });
+function getHotPostComments(subreddit) {
+	return new Promise((resolve, reject) => {
+		let allComments = [];
+		getHotPosts(subreddit)
+			.then(result => {
+				if (result.error) {
+					reject(result);
+				}
+				const postsToProcess = result.length;
+				let postsProcessed = 0;
+				result.forEach((post) => {
+					getAllPostComments(subreddit, post.id)
+						.then((result) => {
+							postsProcessed++;
+							allComments = allComments.concat(result);
+							if (postsProcessed == postsToProcess) {
+								resolve(allComments);
+							}
+						}).catch((error) => {
+							reject({ error: error });
+					});
+				});
+			});
+	});
+
+
 }
 
 function getCommenterPosts(subreddit, callback) {

@@ -278,11 +278,17 @@ function getPostReplyGraph(subreddit, id, response) {
 * Retrieves all "hot" comments from "the current "hot" posts of the subreddit
 */
 function getHotComments(subreddit, response) {
-    let reddit=require('./reddit-module');
-    reddit.getHotPostComments(subreddit, function (result) {
-        response.write(JSON.stringify(result));
-        response.end();
-    });
+    let reddit = require('./reddit-module');
+    reddit.getHotPostComments(subreddit)
+		.then(result => {
+			response.write(JSON.stringify(result));
+			response.end();
+		})
+		.catch(e => {
+			response.statusCode = 400;
+			response.write("Encountered the following error when requesting hot comments: " + JSON.stringify(e));
+			response.end();
+	});
 }
 
 // GOOGLE MAPS QUERIES
