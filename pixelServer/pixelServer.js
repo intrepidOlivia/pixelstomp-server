@@ -259,7 +259,7 @@ function getActiveHotRedditors(subreddit, response) {
 		})
 		.catch((verboseError) => {
 			response.statusCode = 400;
-			response.write(JSON.stringify(verboseError));
+			response.write("Encountered the following error when requesting redditors: " + JSON.stringify(verboseError));
 			response.end();
 		});
 }

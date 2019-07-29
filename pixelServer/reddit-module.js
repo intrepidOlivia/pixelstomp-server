@@ -678,15 +678,6 @@ function handleManyMoreChildren(link, ids, callback) {
     });
 }
 
-function getHotPosts(subreddit, callback) {
-    makeAuthorizedRequest(`/r/${subreddit}/hot`, function (result) {
-        if (!result.data || !result.data.children) {
-            callback({ error: result });
-        }
-        callback(result.data.children);
-    });
-}
-
 /**
  *
  * @param subreddit
