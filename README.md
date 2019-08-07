@@ -24,6 +24,37 @@ Note: Use of this module currently requires that a module called `environment.js
 # reddit-lookup
 A redditor search engine. search by a variety of patterns, sectioned off by scope. Try it out here: http://pixelstomp.com/apps/reddit_lookup_utility/lookup.html
 
+# youtube lookup
+A youtube search engine. Search for high quality thumbnails and for details about comment activity for a specified video. Try it out here: http://pixelstomp.com/apps/yt-request/yt_lookup.html
+
+## youtube-module.js:
+
+### Setup
+
+Initialize via `require(./youtube-module)`
+
+Note: Use of this module currently requires that a module called `environment.js` exists in the same directory which provides a valid youtube app key through an exported function called `getYoutubeKey`. You can change this by hard-coding your app key into the places that these functions are called, but remember not to make your app key available in a public place.
+
+### API:
+
+`getAllComments(videoID)`: Retrieves up to 1000 comments on a given video. Returns a promise that resolves with as an array of comment threads.
+* videoID {string}: The ID of the video
+
+`getVideoThumbnail(videoID, callback)`: Gets the highest quality thumbnail available for a video.
+* videoID {string}: The ID of the video
+* callback {function} Function that's called when thumbnail is retrieved.
+
+`getRecentVideo(user, callback)`: Gets the VideoID of the user's most recent video.
+* user {string}: The user ID for a Youtube channel
+* callback {function}: Function that's called when the videoID is retrieved.
+
+`getUserChannelComments(user, channel)`: For any given user and any given channel, retrieve that user's comments on the most recent ten videos posted by that channel. Only queries 1000 comments per video.
+* user {string}: The user ID for a Youtube user.
+* channel {string}: The channel ID to search the comments of.
+
+`getVideoChannel(videoID)`: Retrieves the channel ID for any given video. Returns a Promise that resolves with the Channel ID as a string.
+* videoID {string}: The video ID of a Youtube video.
+
 ## reddit-module.js:
 
 ### Setup:
