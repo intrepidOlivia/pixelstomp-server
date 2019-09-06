@@ -1,5 +1,6 @@
 pixelServer/environment.js
 pixelServer/output.log
+pixelServer/db/
 node_modules/
 .vs/slnx.sqlite
 .vs/pixelstomp/v15/.suo
