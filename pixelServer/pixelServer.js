@@ -1,6 +1,7 @@
 var http = require('http');
 var geocoding = require('./geocoding-module');
 const Log = require('./logging');
+const PORT = process.env.PORT || 8080;
 
 var pixelServer = http.createServer(function (request, response) {
     var url = require('url');
@@ -114,7 +115,7 @@ var pixelServer = http.createServer(function (request, response) {
     }
 
 });
-pixelServer.listen(8080, function () {
+pixelServer.listen(PORT, function () {
     Log('pixelServer listening on port 8080.');
 });
 pixelServer.on('error', function (err) {
