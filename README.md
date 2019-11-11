@@ -9,6 +9,20 @@ A redditor search engine. search by a variety of patterns, sectioned off by scop
 # youtube lookup
 A youtube search engine. Search for high quality thumbnails and for details about comment activity for a specified video. Try it out here: http://pixelstomp.com/apps/yt-request/yt_lookup.html
 
+## Project Installation
+
+**Option 1 - Docker method:**
+
+1. Have Docker installed and running. 
+2. Run `docker build -t pixelstomp .`
+3. Run `docker start pixelstomp`.
+
+**Option 2 - Local method:** 
+
+1. Have Node installed.
+2. Run `npm install`.
+3. Run `npm start`.
+
 ## youtube-module.js:
 
 ### Setup
