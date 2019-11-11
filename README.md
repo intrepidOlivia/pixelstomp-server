@@ -15,7 +15,7 @@ A youtube search engine. Search for high quality thumbnails and for details abou
 
 1. Have Docker installed and running. 
 2. Run `docker build -t pixelstomp .`
-3. Run `docker start pixelstomp`.
+3. Run `docker run -p 8080:8080 pixelstomp`.
 
 **Option 2 - Local method:** 
 

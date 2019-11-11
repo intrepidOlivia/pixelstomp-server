@@ -9,7 +9,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "PORT=8080 node pixelServer/pixelServer.js"
+    "start": "PORT=8080 node src/pixelServer.js"
   },
   "repository": {
     "type": "git",
