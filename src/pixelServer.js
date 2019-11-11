@@ -360,7 +360,10 @@ function getSortedComments(videoID, response) {
 	const youtube = require('./youtube-module');
 	youtube.retrieveAllComments(videoID)
 		.then(allComments => {
-			response.write(JSON.stringify(err));
+			const utils = require('./youtubeUtils/commentUtils');
+			const comments = utils.flattenComments(allComments);
+			comments.sort(utils.sortByDate);
+			response.write(JSON.stringify(comments));
 			response.end();
 		})
 		.catch(err => {
