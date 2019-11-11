@@ -30,10 +30,6 @@ Note: Use of this module currently requires that a module called `environment.js
 * user {string}: The user ID for a Youtube channel
 * callback {function}: Function that's called when the videoID is retrieved.
 
-`getUserChannelComments(user, channel)`: For any given user and any given channel, retrieve that user's comments on the most recent ten videos posted by that channel. Only queries 1000 comments per video.
-* user {string}: The user ID for a Youtube user.
-* channel {string}: The channel ID to search the comments of.
-
 `getVideoChannel(videoID)`: Retrieves the channel ID for any given video. Returns a Promise that resolves with the Channel ID as a string.
 * videoID {string}: The video ID of a Youtube video.
 

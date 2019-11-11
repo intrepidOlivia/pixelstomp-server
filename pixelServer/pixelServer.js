@@ -17,6 +17,12 @@ var pixelServer = http.createServer(function (request, response) {
     try {
 		switch (path)
 		{
+			case '/':
+				response.setHeader('Set-Cookie', ['pixelstomp_cookie=test1', 'language=javascript']);
+				response.write(JSON.stringify(request.headers));
+				response.end();
+				break;
+
 			case '/friendly-radius/twitter-authenticate.js':
 				response = ServePage(request, response);
 				break;
@@ -95,10 +101,6 @@ var pixelServer = http.createServer(function (request, response) {
 				getRecentVideo(queries.user, response);
 				break;
 
-			case '/youtube/channelInteractions':
-				getUserChannelComments(queries.user, queries.channel, response);
-				break;
-
 			case '/youtube/channel':
 				getVideoChannel(queries.v, response);
 				break;
@@ -116,7 +118,7 @@ var pixelServer = http.createServer(function (request, response) {
 
 });
 pixelServer.listen(PORT, function () {
-    Log('pixelServer listening on port 8080.');
+    Log(`pixelServer listening on port ${PORT}.`);
 });
 pixelServer.on('error', function (err) {
     Log('The following error has been encountered with the server receiving requests from Pixelstomp: ' + err.message + '\n');
@@ -307,7 +309,7 @@ function requestCoordinates(location, response) {
 
 function getCommentsOfVideo(videoID, response) {
   const youtube = require('./youtube-module');
-  youtube.getAllComments(videoID)
+  youtube.retrieveAllComments(videoID, 1000)
 	  .then(function (comments) {
 		response.write(JSON.stringify(comments));
 		response.end();
@@ -333,21 +335,6 @@ function getRecentVideo(user, response) {
         response.write(videoID);
         response.end();
     });
-}
-
-function getUserChannelComments(user, channel, response) {
-	const youtube = require('./youtube-module');
-	youtube.getUserChannelComments(user, channel)
-		.then((result) => {
-			response.statusCode = 200;
-			response.write(JSON.stringify(result));
-			response.end();
-		})
-		.catch((error) => {
-			response.statusCode = 400;
-			response.write(JSON.stringify(error));
-			response.end();
-		});
 }
 
 function getVideoChannel(videoID, response) {

@@ -8,7 +8,7 @@ const Log = require('./logging');
 * Each thread is an array of comment objects. The first element of the thread array is always the first comment,
 * followed by each subsequent reply.
 */
-exports.getAllComments = function (videoID) {
+exports.retrieveAllComments = function (videoID, limit) {
 	Log(`Requesting all comments for video:`, videoID);
 	return new Promise((resolve, reject) => {
 		getCommentThreads(videoID)
@@ -39,7 +39,7 @@ exports.getAllComments = function (videoID) {
 								commentCount += commentThread.length;
 								threadsProcessed += 1;
 
-								if (commentCount >= 1000) {	// Setting a limit because Google shuts us down otherwise
+								if (limit && commentCount >= limit) {	// Setting a limit because Google shuts us down otherwise
 									resolve(threadArray);
 								}
 
@@ -164,43 +164,6 @@ function getRecentUploads(uploadsID, count = 10) {
 		makeHTTPSRequest(vidPath, resolve);
 	});
 }
-
-exports.getUserChannelComments = function (user, channel) {
-	return new Promise((resolve, reject) => {
-		// Start by retrieving the last ten videos published by that channel.
-		getUploadsFromChannel(channel, 10)
-			.then((uploads) => {
-				const userComments = [];
-				const videosToCheck = uploads.items.length;
-				let checked = 0;
-				uploads.items.forEach((video) => {
-					const videoID = video.contentDetails.videoId;
-
-					// retrieve all comments for video ID
-					exports.getAllComments(videoID)
-						.then((commentThreads) => {
-							commentThreads.forEach((thread) => {
-								thread.forEach((comment) => {
-									const author = comment.snippet.authorDisplayName;
-
-									if (author.trim() == user.trim()) {
-										userComments.push(comment);
-									}
-								});
-
-							});
-							checked++;
-							if (checked === videosToCheck) {
-								resolve(userComments);
-							}
-						})
-						.catch((e) => {
-							reject(e);
-						});
-				});
-			});
-	});
-};
 
 /**
  * Retrieves the channel that published this specific video ID
