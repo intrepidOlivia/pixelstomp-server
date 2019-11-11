@@ -105,6 +105,10 @@ var pixelServer = http.createServer(function (request, response) {
 				getVideoChannel(queries.v, response);
 				break;
 
+			case '/youtube/getSortedComments':
+				getSortedComments(queries.v, response);
+				break;
+
 			default:
 				Serve404(response);
 		}
@@ -156,7 +160,7 @@ function requestRecentTweets(username, response) {
 // ---------------
 
 function requestCommenterPosts(subreddit, response) {
-    let reddit = require('./reddit-module');
+    let reddit = require('./redditUtils/reddit-module');
     reddit.getCommenterPosts(subreddit, function (result) {
         response.write(JSON.stringify(result));
         response.end();
@@ -164,7 +168,7 @@ function requestCommenterPosts(subreddit, response) {
 }
 
 function requestRedditorComments(user, scope = 'all', response) {
-    let reddit = require('./reddit-module');
+    let reddit = require('./redditUtils/reddit-module');
     switch (scope) {
 		case 'all':
 			reddit.getAllComments(user, function (result) {
@@ -190,14 +194,14 @@ function requestRedditorComments(user, scope = 'all', response) {
 }
 
 function generateWordCloud(user, response) {
-    let reddit = require('./reddit-module');
+    let reddit = require('./redditUtils/reddit-module');
     reddit.getAllComments(user, function (result) {
         // Add word cloud stuff here
     });
 }
 
 function getRedditorInfo(user, response) {
-    let reddit = require('./reddit-module');
+    let reddit = require('./redditUtils/reddit-module');
     reddit.searchForRedditor(user, function (result) {
         response.write(result);
         response.end();
@@ -205,7 +209,7 @@ function getRedditorInfo(user, response) {
 }
 
 function trackRedditComments(subreddit, postID, response) {
-    let reddit = require('./reddit-module');
+    let reddit = require('./redditUtils/reddit-module');
     reddit.getTrackedVotes(subreddit, postID, function (result) {
         response.write(JSON.stringify(result));
         response.end();
@@ -213,7 +217,7 @@ function trackRedditComments(subreddit, postID, response) {
 }
 
 function getSubredditIntersection(subreddit, response) {
-    let reddit = require('./reddit-module');
+    let reddit = require('./redditUtils/reddit-module');
     reddit.getSubredditorsInfo(subreddit, function (result) {
         response.write(JSON.stringify(result));
         response.end();
@@ -221,7 +225,7 @@ function getSubredditIntersection(subreddit, response) {
 }
 
 function getPostComments(subreddit, postID, response, scope = 'all') {
-    let reddit = require('./reddit-module');
+    let reddit = require('./redditUtils/reddit-module');
 
     switch (scope) {
 		case 'all':
@@ -254,7 +258,7 @@ function getPostComments(subreddit, postID, response, scope = 'all') {
 
 function getActiveHotRedditors(subreddit, response) {
 
-	let reddit = require('./reddit-module');
+	let reddit = require('./redditUtils/reddit-module');
 	reddit.getActiveHotRedditors(subreddit)
 		.then((redditorMap) => {
 			response.write(JSON.stringify(redditorMap));
@@ -268,7 +272,7 @@ function getActiveHotRedditors(subreddit, response) {
 }
 
 function getPostReplyGraph(subreddit, id, response) {
-	let reddit = require('./reddit-module');
+	let reddit = require('./redditUtils/reddit-module');
 	reddit.getAllPostComments(subreddit, id)
 		.then((threads) => {
 			let flatThread = reddit.flattenThreads(threads);
@@ -281,7 +285,7 @@ function getPostReplyGraph(subreddit, id, response) {
 * Retrieves all "hot" comments from "the current "hot" posts of the subreddit
 */
 function getHotComments(subreddit, response) {
-    let reddit = require('./reddit-module');
+    let reddit = require('./redditUtils/reddit-module');
     reddit.getHotPostComments(subreddit)
 		.then(result => {
 			response.write(JSON.stringify(result));
@@ -348,6 +352,19 @@ function getVideoChannel(videoID, response) {
 		.catch((error) => {
 			response.statusCode = 400;
 			response.write(JSON.stringify(error));
+			response.end();
+		});
+}
+
+function getSortedComments(videoID, response) {
+	const youtube = require('./youtube-module');
+	youtube.retrieveAllComments(videoID)
+		.then(allComments => {
+			response.write(JSON.stringify(err));
+			response.end();
+		})
+		.catch(err => {
+			response.write(JSON.stringify(err));
 			response.end();
 		});
 }

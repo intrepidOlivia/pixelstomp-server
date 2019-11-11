@@ -1,7 +1,7 @@
 // Constants
 let REDIRECT = 'http://pixelstomp.com/apps/reddit_lookup_utility/lookup.html';
-let APP_ID = require('./reddit-config').getAppKey();
-let APP_SECRET = require('./reddit-config').getAppSecret();
+let APP_ID = require('../../reddit-config').getAppKey();
+let APP_SECRET = require('../../reddit-config').getAppSecret();
 let USER_AGENT = 'pixelstomp-reddit-querier by poplopo';
 
 // REDDIT CONSTANTS
@@ -467,7 +467,7 @@ function trackVoteRhythm(post) {
 
     // Register each comment in a vote tabulator structure
 
-    let Tabulator = require('../redditUtils/vote-tabulator');
+    let Tabulator = require('./vote-tabulator');
     let voteTracker = new Tabulator(post);
     console.log('vote Tracker initialized:', voteTracker);
 

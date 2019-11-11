@@ -2,7 +2,7 @@
 // const exports = {};
 
 // Initialization
-let appkey = require('./environment').getTwitterKey();  // Retrieves application-only key from config
+let appkey = require('../environment').getTwitterKey();  // Retrieves application-only key from config
 let bearerToken = null;     // Authentication token
 let queuedArgs = [];        // Queued paths to query after another bearer token is retrieved.
 const apiVersion = '1.1';

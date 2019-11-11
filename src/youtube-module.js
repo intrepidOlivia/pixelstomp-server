@@ -1,4 +1,4 @@
-const ytKey = require('./environment').getYoutubeKey();
+const ytKey = require('../environment').getYoutubeKey();
 const ROOT_URL = 'content.googleapis.com';
 const Log = require('./logging');
 
