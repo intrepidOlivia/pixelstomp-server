@@ -138,6 +138,18 @@ exports.getRecentVideo = function(user, callback) {
 		});
 };
 
+exports.getVideoInfo = function (videoID) {
+	return new Promise((resolve, reject) => {
+		try {
+            let path = `/videos?id=${videoID}&part=snippet`;
+            makeHTTPSRequest(path, resolve);
+		}
+		catch (e) {
+			reject(e);
+		}
+	});
+};
+
 function getUploadsFromChannel(channelID, count) {
 	return new Promise((resolve, reject) => {
 		let path = `/channels?id=${channelID}&part=contentDetails`;

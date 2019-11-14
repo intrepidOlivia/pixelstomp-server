@@ -109,6 +109,10 @@ var pixelServer = http.createServer(function (request, response) {
 				getSortedComments(queries.v, response);
 				break;
 
+			case '/youtube/video':
+				getVideoInfo(queries.v, response);
+				break;
+
 			default:
 				Serve404(response);
 		}
@@ -372,6 +376,18 @@ function getSortedComments(videoID, response) {
 		});
 }
 
+function getVideoInfo(videoId, response) {
+	const youtube = require('./youtube-module');
+	youtube.getVideoInfo(videoId)
+		.then(videoInfo => {
+			response.write(JSON.stringify(videoInfo));
+			response.end();
+		})
+		.catch(err => {
+			response.write(JSON.stringify(err));
+			response.end();
+		});
+}
 
 // MISC QUERIES
 // ------------
