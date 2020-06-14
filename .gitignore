@@ -6,3 +6,4 @@ node_modules/
 .vs/pixelstomp/v15/.suo
 .vs/VSWorkspaceState.json
 .idea/
+/nbproject/

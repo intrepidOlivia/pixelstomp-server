@@ -90,8 +90,10 @@ var pixelServer = http.createServer(function (request, response) {
 				break;
 
 			case '/youtube/comments':
-				getCommentsOfVideo(queries.v, response);
+                            if (request.headers.referer.includes("pixelstomp")) {
+                                getCommentsOfVideo(queries.v, response);
 				break;
+                            }
 
 			case '/youtube/thumbnail':
 				getYoutubeThumbnail(queries.v, response);
