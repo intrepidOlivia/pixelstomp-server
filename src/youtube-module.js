@@ -131,11 +131,16 @@ exports.getVideoThumbnail = function (videoID, callback) {
 		makeHTTPSRequest(path, callback);
 }
 
-exports.getRecentVideo = function(user, callback) {
-	getUploadsFromChannel(user, 1)
-		.then((playlistItems) => {
-			callback(playlistItems.items[0].contentDetails.videoId);
-		});
+exports.getRecentVideo = function(user) {
+	return getUploadsFromChannel(user, 1)
+        .then((playlistItems) => {
+            if (playlistItems && playlistItems.items) {
+                return playlistItems.items[0].contentDetails.videoId;
+            } else {
+                throw(playlistItems);
+            }
+        });
+
 };
 
 exports.getVideoInfo = function (videoID) {

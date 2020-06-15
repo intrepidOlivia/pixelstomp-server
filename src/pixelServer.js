@@ -15,13 +15,12 @@ var pixelServer = http.createServer(function (request, response) {
     response.setHeader('Content-Type', 'application/json');
 
     try {
-		switch (path)
-		{
-			case '/':
-				response.setHeader('Set-Cookie', ['pixelstomp_cookie=test1', 'language=javascript']);
-				response.write(JSON.stringify(request.headers));
-				response.end();
-				break;
+        switch (path) {
+            case '/':
+                response.setHeader('Set-Cookie', ['pixelstomp_cookie=test1', 'language=javascript']);
+                response.write(JSON.stringify(request.headers));
+                response.end();
+                break;
 
 			case '/friendly-radius/twitter-authenticate.js':
 				response = ServePage(request, response);
@@ -89,11 +88,13 @@ var pixelServer = http.createServer(function (request, response) {
 				}
 				break;
 
-			case '/youtube/comments':
-                            if (request.headers.referer.includes("pixelstomp")) {
-                                getCommentsOfVideo(queries.v, response);
-				break;
-                            }
+            case '/youtube/comments':
+                if (request.headers.referer && request.headers.referer.includes("pixelstomp")) {
+                    getCommentsOfVideo(queries.v, response);
+                } else {
+                    ServeError(response, 403, "Unauthorized request");
+                }
+                break;
 
 			case '/youtube/thumbnail':
 				getYoutubeThumbnail(queries.v, response);
@@ -115,12 +116,12 @@ var pixelServer = http.createServer(function (request, response) {
 				getVideoInfo(queries.v, response);
 				break;
 
-			default:
-				Serve404(response);
-		}
+            default:
+                ServeError(response);
+        }
     }
-    catch(e) {
-    	console.log('Unknown error:', e);
+    catch (e) {
+        Log('Unknown error:', e);
         response.statusCode = 400;
         response.write(JSON.stringify(e));
         response.end();
@@ -318,17 +319,18 @@ function requestCoordinates(location, response) {
 // ---------------
 
 function getCommentsOfVideo(videoID, response) {
-  const youtube = require('./youtube-module');
-  youtube.retrieveAllComments(videoID, 1000)
-	  .then(function (comments) {
-		response.write(JSON.stringify(comments));
-		response.end();
-	  })
-	  .catch((err) => {
-	  	response.statusCode = 400;
-	  	response.write(JSON.stringify(err));
-	  	response.end();
-	  });
+    Log("Retrieving comments for video: ", videoID);
+    const youtube = require('./youtube-module');
+    youtube.retrieveAllComments(videoID, 1000)
+        .then(function (comments) {
+            response.write(JSON.stringify(comments));
+            response.end();
+        })
+        .catch((err) => {
+            response.statusCode = 400;
+            response.write(JSON.stringify(err));
+            response.end();
+        });
 }
 
 function getYoutubeThumbnail(videoID, response) {
@@ -341,10 +343,19 @@ function getYoutubeThumbnail(videoID, response) {
 
 function getRecentVideo(user, response) {
     const youtube = require('./youtube-module');
-    youtube.getRecentVideo(user, (videoID) => {
-        response.write(videoID);
-        response.end();
-    });
+    youtube.getRecentVideo(user)
+        .then(videoId => {
+            response.write(videoId);
+            response.end();
+        })
+        .catch(err => {
+            if (err.error) {
+                ServeError(response, err.error.status, err.error.message);
+            } else {
+                Log("Unknown error:", err);
+                ServeError(response, 404, "Not Found");
+            }
+        });
 }
 
 function getVideoChannel(videoID, response) {
@@ -419,19 +430,20 @@ function ServePage(request, response) {
 
 }
 
-function Serve404(response) {
-    response.writeHead(404, 'Not found.');
+function ServeError(response, status = 404, message = 'Not found.') {
+    response.writeHead(status, message);
     try {
         var fs = require('fs');
         var rs = fs.createReadStream('404.html');
         rs.on('error', function (err) {
-            response.write('Not found.');
+            response.write(message);
             response.end();
         });
         rs.pipe(response);
         rs.on('end', function () {
             response.end();
         });
+        Log(`Responded with: ${status} ${message}`);
     }
     catch (err) {
         response.write('Not found.');
