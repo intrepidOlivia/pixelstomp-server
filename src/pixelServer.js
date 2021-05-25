@@ -1,6 +1,9 @@
 var http = require('http');
+
 var geocoding = require('./geocoding-module');
 const Log = require('./logging');
+const fanficSockets = require('./fanfic_module');
+
 const PORT = process.env.PORT || 8080;
 
 var pixelServer = http.createServer(function (request, response) {
@@ -127,6 +130,10 @@ var pixelServer = http.createServer(function (request, response) {
         response.end();
     }
 
+});
+pixelServer.on('upgrade', (request, socket, head) => {
+	console.log('referer:', request.headers.referer);
+	fanficSockets.proxy.ws(request, socket, head);
 });
 pixelServer.listen(PORT, function () {
     Log(`pixelServer listening on port ${PORT}.`);

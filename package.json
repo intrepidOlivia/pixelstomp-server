@@ -4,7 +4,9 @@
   "description": "utilities for pixelstomp",
   "main": "index.js",
   "dependencies": {
-    "nedb": "^1.8.0"
+    "http-proxy": "^1.18.1",
+    "nedb": "^1.8.0",
+    "ws": "^7.4.5"
   },
   "devDependencies": {},
   "scripts": {
