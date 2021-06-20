@@ -118,6 +118,10 @@ var pixelServer = http.createServer(function (request, response) {
 			case '/youtube/video':
 				getVideoInfo(queries.v, response);
 				break;
+			
+			case '/fanfic/fic_submit':
+				fanficSockets.api.loadNewFanfic(request, response);
+				break;
 
             default:
                 ServeError(response);

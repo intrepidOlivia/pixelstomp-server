@@ -2,14 +2,16 @@
 const WebSocket = require('ws');
 const fs = require('fs');
 var httpProxy = require('http-proxy');
+const { IncomingMessage } = require('http');
 
 const PORT = process.env.WSPORT || 8081;
 
 let fullText = '';
 const sockets = {};
+const viewers = {};
 let clientCount = 0;
 let sectionIndex = 0;
-let RATE_LIMIT = 1000;
+let RATE_LIMIT = 500;
 let rateTimer = Date.now();
 
 // DEBUG - READ SAMPLE TEXT
@@ -47,6 +49,13 @@ server.on('connection', function connect(socket) {
             throw new Error(`Unable to parse incoming message: ${messageString}`);
         }
 
+        if (message.viewer) {
+            // TODO: Send only the index of the current text
+            registerViewer(sockets[clientId]);
+            feedToViewers();
+            return;
+        }
+
         // find socket of sender
         const user = sockets[clientId];
         if (!user.name) {
@@ -61,21 +70,16 @@ server.on('connection', function connect(socket) {
         }
 
         // check for keyup or down event
-        if (message.shiftIndex && Date.now() - rateTimer >= RATE_LIMIT) {
-            sectionIndex += message.shiftIndex === 'up' ? -1 : 1;
+        if (message.changeIndex !== undefined && Date.now() - rateTimer >= RATE_LIMIT) {
+            sectionIndex = message.changeIndex;
             if (sectionIndex < 0) {
                 sectionIndex = 0;
             }
             rateTimer = Date.now();
         }
 
-        response.text = fullText;
-        response.index = sectionIndex;
-        response.allClients = Object.values(sockets).map(client => client.name);
-
-        Object.values(sockets).forEach(s => {
-            s.socket.send(JSON.stringify(response));
-        });
+        feedToReaders();
+        feedToViewers();
     })
 
     socket.on('close', function () {
@@ -88,12 +92,40 @@ server.on('connection', function connect(socket) {
     });
 });
 
+function registerViewer(socketClient) {
+    socketClient.isViewer = true;
+}
+
+function feedToReaders() {
+    Object.values(sockets).forEach(s => {
+        if (!s.isViewer) {
+            s.socket.send(JSON.stringify({
+                text: fullText,
+                index: sectionIndex,
+                allClients: Object.values(sockets).filter(client => !client.isViewer).map(client => client.name)
+            }));
+        }
+    });
+}
+
+function feedToViewers() {
+    Object.values(sockets).forEach(s => {
+        if (s.isViewer) {
+            s.socket.send(JSON.stringify({
+                text: fullText,
+                index: sectionIndex,
+            }));
+        }
+    });
+}
+
 // FOR REFERENCE ONLY
 const messageStructure = {
     alert: 'string',
     text: 'string',
     index: 'number',
     allClients: 'Array<string>',
+    viewer: 'boolean',
 };
 
 class SocketClient {
@@ -101,6 +133,7 @@ class SocketClient {
         this.socket = socket;
         this.id = id;
         this.name = null;
+        this.isViewer = false;
     }
 }
 
@@ -109,8 +142,46 @@ function resetFanfic() {
     // TODO: Reset loaded fanfic
 }
 
+/**
+ * 
+ * @param {IncomingMessage} request 
+ * @param {OutgoingMessage} response
+ */
+function loadNewFanfic(request, response) {
+    
+    let bodyString = '';
+    request.on('data', chunk => {
+        bodyString += chunk;
+    });
+    request.on('end', () => {
+        let body;
+        try {
+            body = JSON.parse(bodyString);
+            // const fanficUrl = `http://fanfiction.net/s/${urlInfo.id}/${urlInfo.chapter}`
+            const fanficText = body.text;
+            fullText = fanficText;
+            response.statusCode = 200;
+            response.write('Successfully updated fic');
+            response.end();
+            sectionIndex = 0;
+            feedToReaders();
+            feedToViewers();
+            return;
+        } catch (e) {
+            response.statusCode = 400;
+            console.log('ERROR:', e);
+            response.write('Unable to process request: ' + e);
+            response.end();
+            return;
+        }
+    });
+}
+
 module.exports = {
     server,
     PORT,
     proxy: wsProxy,
+    api: {
+        loadNewFanfic,
+    },
 };
