@@ -7,3 +7,5 @@ node_modules/
 .vs/VSWorkspaceState.json
 .idea/
 /nbproject/
+reddit-config.js
+
