@@ -86,9 +86,6 @@ server.on('connection', function connect(socket) {
         delete sockets[clientId];
         const socketsRemaining = Object.keys(sockets).length;
         console.log(`Removing client ${clientId}. Number of sockets remaining:`, socketsRemaining);
-        if (socketsRemaining < 1) {
-            resetFanfic();
-        }
     });
 });
 
