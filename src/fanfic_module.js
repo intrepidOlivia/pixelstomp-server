@@ -13,6 +13,7 @@ let clientCount = 0;
 let sectionIndex = 0;
 let RATE_LIMIT = 500;
 let rateTimer = Date.now();
+const READER_URL = "http://pixelstomp.com/apps/fanfic_theater/fanfic_reader.html";
 
 // DEBUG - READ SAMPLE TEXT
 const readStream = fs.createReadStream('./public/fanfic_sample.txt', { encoding: 'utf8' });
@@ -145,6 +146,10 @@ function resetFanfic() {
  * @param {OutgoingMessage} response
  */
 function loadNewFanfic(request, response) {
+    if (request.headers['content-type'] === 'application/x-www-form-urlencoded') {
+        loadNewFanficFromForm(request, response);
+        return;
+    }
     
     let bodyString = '';
     request.on('data', chunk => {
@@ -154,15 +159,10 @@ function loadNewFanfic(request, response) {
         let body;
         try {
             body = JSON.parse(bodyString);
-            // const fanficUrl = `http://fanfiction.net/s/${urlInfo.id}/${urlInfo.chapter}`
-            const fanficText = body.text;
-            fullText = fanficText;
+            updateFicText(body.text);
             response.statusCode = 200;
             response.write('Successfully updated fic');
             response.end();
-            sectionIndex = 0;
-            feedToReaders();
-            feedToViewers();
             return;
         } catch (e) {
             response.statusCode = 400;
@@ -172,6 +172,33 @@ function loadNewFanfic(request, response) {
             return;
         }
     });
+}
+
+/**
+ * Used when request is of type application/x-www-form-urlencoded
+ * @param {IncomingMessage} request 
+ * @param {OutgoingMessage} response
+ */
+function loadNewFanficFromForm(request, response) {
+    let bodyString = '';
+    request.on('data', chunk => {
+        bodyString += chunk;
+    });
+
+    request.on('end', () => {
+        let body = new URLSearchParams(bodyString);
+        updateFicText(body.get('text'));
+        response.statusCode = 303;
+        response.setHeader('Location', READER_URL);
+        response.end();
+    });
+}
+
+function updateFicText(text) {
+    fullText = text;
+    sectionIndex = 0;
+    feedToReaders();
+    feedToViewers();
 }
 
 module.exports = {
