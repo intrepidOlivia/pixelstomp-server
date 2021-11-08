@@ -59,15 +59,15 @@ server.on('connection', function connect(socket) {
 
         // find socket of sender
         const user = sockets[clientId];
-        if (!user.name) {
-            // Check for username in message
-            if (message.username) {
-                user.name = message.username;
-            } else {
-                response.alert = 'username',
+        if (!user.name && !message.username) {
+            response.alert = 'username',
                 socket.send(JSON.stringify(response));
                 return;
-            }
+        }
+
+        // Check for username in message
+        if (message.username) {
+            user.name = message.username;
         }
 
         // check for keyup or down event
