@@ -8,4 +8,4 @@ node_modules/
 .idea/
 /nbproject/
 reddit-config.js
-
+environment.js
