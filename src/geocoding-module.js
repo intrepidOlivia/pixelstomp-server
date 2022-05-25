@@ -1,13 +1,13 @@
-
-var appkey = 'AIzaSyC8r6PGt2XEE_ltwCxgGTpYHEc0bHea70I';
+const environment = require('../environment');
 
 //Make a call to the Geocoding API to retrieve a set of coordinates for a provided location
 exports.MakeGeocodingRequest = function (location, callback) {
     var https = require('https');
+    const appKey = environment.getGeocodingKey();
     var options = {
         'method': 'GET',
         'host': 'maps.googleapis.com',
-        'path': '/maps/api/geocode/json?address=' + encodeURIComponent(location) + '&key=' + appkey,
+        'path': '/maps/api/geocode/json?address=' + encodeURIComponent(location) + '&key=' + appKey,
         'headers': {
             'Accept-Language': 'en'   
         }
