@@ -7,6 +7,7 @@ const { IncomingMessage } = require('http');
 const PORT = process.env.WSPORT || 8081;
 
 let fullText = '';
+let ficSource = '';
 const sockets = {};
 const viewers = {};
 let clientCount = 0;
@@ -14,6 +15,16 @@ let sectionIndex = 0;
 let RATE_LIMIT = 500;
 let rateTimer = Date.now();
 const READER_URL = "http://pixelstomp.com/apps/fanfic_theater/fanfic_reader.html";
+
+// FOR REFERENCE ONLY
+const MESSAGE_STRUCTURE = {
+    alert: 'string',
+    text: 'string',
+    index: 'number',
+    allClients: 'Array<string>',
+    viewer: 'boolean',
+    storySource: 'string',
+};
 
 // DEBUG - READ SAMPLE TEXT
 const readStream = fs.createReadStream('./public/fanfic_sample.txt', { encoding: 'utf8' });
@@ -97,10 +108,18 @@ function registerViewer(socketClient) {
 function feedToReaders() {
     Object.values(sockets).forEach(s => {
         if (!s.isViewer) {
+            console.log('Feeding message to readers:', {
+                text: fullText,
+                index: sectionIndex,
+                allClients: Object.values(sockets).filter(client => !client.isViewer).map(client => client.name),
+                storySource: ficSource,
+            });
+            // Keep this structure aligned with MESSAGE_STRUCTURE
             s.socket.send(JSON.stringify({
                 text: fullText,
                 index: sectionIndex,
-                allClients: Object.values(sockets).filter(client => !client.isViewer).map(client => client.name)
+                allClients: Object.values(sockets).filter(client => !client.isViewer).map(client => client.name),
+                storySource: ficSource,
             }));
         }
     });
@@ -116,15 +135,6 @@ function feedToViewers() {
         }
     });
 }
-
-// FOR REFERENCE ONLY
-const messageStructure = {
-    alert: 'string',
-    text: 'string',
-    index: 'number',
-    allClients: 'Array<string>',
-    viewer: 'boolean',
-};
 
 class SocketClient {
     constructor(socket, id) {
@@ -145,32 +155,43 @@ function resetFanfic() {
  * @param {IncomingMessage} request 
  * @param {OutgoingMessage} response
  */
-function loadNewFanfic(request, response) {
+async function loadNewFanfic(request, response) {
     if (request.headers['content-type'] === 'application/x-www-form-urlencoded') {
-        loadNewFanficFromForm(request, response);
-        return;
-    }
-    
-    let bodyString = '';
-    request.on('data', chunk => {
-        bodyString += chunk;
-    });
-    request.on('end', () => {
-        let body;
-        try {
-            body = JSON.parse(bodyString);
-            updateFicText(body.text);
-            response.statusCode = 200;
-            response.write('Successfully updated fic');
-            response.end();
-            return;
-        } catch (e) {
-            response.statusCode = 400;
-            console.log('ERROR:', e);
-            response.write('Unable to process request: ' + e);
-            response.end();
-            return;
-        }
+        await loadNewFanficFromForm(request, response);
+    } else {
+        await loadNewFanficFromPaste(request, response);
+    }    
+
+    feedToReaders();
+    feedToViewers();
+}
+
+async function loadNewFanficFromPaste(request, response) {
+    return new Promise(resolve => {
+        console.log('Loading new fic from paste');
+        let bodyString = '';
+        request.on('data', chunk => {
+            bodyString += chunk;
+        });
+        request.on('end', () => {
+            let body;
+            try {
+                body = JSON.parse(bodyString);
+                console.log('body of pasted fic:', body);
+                updateFicText(body.text);
+                updateFicSource();
+                response.statusCode = 200;
+                response.write('Successfully updated fic');
+                response.end();
+                resolve();
+            } catch (e) {
+                response.statusCode = 400;
+                console.log('ERROR:', e);
+                response.write('Unable to process request: ' + e);
+                response.end();
+                resolve();
+            }
+        });
     });
 }
 
@@ -179,26 +200,37 @@ function loadNewFanfic(request, response) {
  * @param {IncomingMessage} request 
  * @param {OutgoingMessage} response
  */
-function loadNewFanficFromForm(request, response) {
-    let bodyString = '';
-    request.on('data', chunk => {
-        bodyString += chunk;
-    });
+async function loadNewFanficFromForm(request, response) {
+    return new Promise(resolve => {
+        let bodyString = '';
+        request.on('data', chunk => {
+            bodyString += chunk;
+        });
 
-    request.on('end', () => {
-        let body = new URLSearchParams(bodyString);
-        updateFicText(body.get('text'));
-        response.statusCode = 303;
-        response.setHeader('Location', READER_URL);
-        response.end();
+        request.on('end', () => {
+            let body = new URLSearchParams(bodyString);
+            console.log('body:', body);
+            updateFicSource(body.get('source'));
+            updateFicText(body.get('text'));
+            response.statusCode = 303;
+            response.setHeader('Location', READER_URL);
+            response.end();
+            resolve();
+        });
     });
+}
+
+function updateFicSource(source) {
+    if (source) {
+        ficSource = source;
+    } else {
+        ficSource = '';
+    }
 }
 
 function updateFicText(text) {
     fullText = text;
     sectionIndex = 0;
-    feedToReaders();
-    feedToViewers();
 }
 
 module.exports = {
