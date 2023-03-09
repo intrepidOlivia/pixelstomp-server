@@ -87,7 +87,6 @@ RetrieveBatchUsers = function (ids, callback) {
 };
 
 exports.RetrieveTwitterUser = function (username, callback) {
-    console.log(new Date().toUTCString() + "> Requesting information from Twitter for user " + username);
     makeAuthorizedGet(`/1.1/users/show.json?screen_name=${encodeURIComponent(username.trim())}`, callback);
 };
 
@@ -161,14 +160,13 @@ function makeAuthorizedPost (postInfo, callback) {
         });
     });
     request.on('error', function (err){
-        console.log('PerformRequest has encountered the following error: ' + err.message);
+        console.error('PerformRequest has encountered the following error: ' + err.message);
     });
     postInfo.postData && request.write(postInfo.postData);
     request.end();
 }
 
 function getTwitterToken (callback) {
-     console.log("Requesting access token from Twitter.");
      let options = {
          hostname: 'api.twitter.com',
          path: '/oauth2/token',
@@ -188,12 +186,10 @@ function getTwitterToken (callback) {
                  if (result.token_type && result.token_type == 'bearer')
                  {
                      bearerToken = result.access_token;
-                     console.log('Access token retrieved.');
                     callback && callback(queuedArgs.shift(), queuedArgs.shift());
                      // callback(bearerToken); // with queued args
                  }
                  else {
-                     console.log('Result of access token retrieval:', result);
                      throw new Error('An error was encountered when retrieving access token.');
                  }
              });
@@ -225,7 +221,7 @@ parseResponse = function(response, callback) {
             result = JSON.parse(stringResult);
         }
         catch (e) {
-            console.log('Response was the following string:', stringResult);
+            console.error('Response was the following string:', stringResult);
             result = stringResult;
         }
         callback(result);

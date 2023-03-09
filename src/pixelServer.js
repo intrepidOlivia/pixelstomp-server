@@ -136,7 +136,6 @@ var pixelServer = http.createServer(function (request, response) {
 
 });
 pixelServer.on('upgrade', (request, socket, head) => {
-	console.log('referer:', request.headers.referer);
 	fanficSockets.proxy.ws(request, socket, head);
 });
 pixelServer.listen(PORT, function () {
@@ -150,7 +149,7 @@ pixelServer.on('error', function (err) {
 // ---------------
 
 function requestTwitterUser(username, response) {
-    console.log(new Date().toUTCString() + "> Initiated request on twitter user " + username);
+    console.info(new Date().toUTCString() + "> Initiated request on twitter user " + username);
     let twitter = require('./twitter-module');
     twitter.RetrieveTwitterUser(username, function (result) {
         response.write(JSON.stringify(result));

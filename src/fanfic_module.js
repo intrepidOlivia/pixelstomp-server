@@ -47,7 +47,7 @@ const wsProxy = new httpProxy.createProxyServer({
 const server = new WebSocket.Server({ port: PORT });
 server.on('connection', function connect(socket) {
     const clientId = ++clientCount;
-    console.log(`connection established with client ${clientId}`);
+    console.info(`connection established with client ${clientId}`);
     sockets[clientId] = new SocketClient(socket, clientId);
 
     socket.on('message', function incoming(messageString) {
@@ -97,7 +97,7 @@ server.on('connection', function connect(socket) {
     socket.on('close', function () {
         delete sockets[clientId];
         const socketsRemaining = Object.keys(sockets).length;
-        console.log(`Removing client ${clientId}. Number of sockets remaining:`, socketsRemaining);
+        console.info(`Removing client ${clientId}. Number of sockets remaining:`, socketsRemaining);
     });
 });
 
@@ -108,12 +108,6 @@ function registerViewer(socketClient) {
 function feedToReaders() {
     Object.values(sockets).forEach(s => {
         if (!s.isViewer) {
-            console.log('Feeding message to readers:', {
-                text: fullText,
-                index: sectionIndex,
-                allClients: Object.values(sockets).filter(client => !client.isViewer).map(client => client.name),
-                storySource: ficSource,
-            });
             // Keep this structure aligned with MESSAGE_STRUCTURE
             s.socket.send(JSON.stringify({
                 text: fullText,
@@ -168,7 +162,6 @@ async function loadNewFanfic(request, response) {
 
 async function loadNewFanficFromPaste(request, response) {
     return new Promise(resolve => {
-        console.log('Loading new fic from paste');
         let bodyString = '';
         request.on('data', chunk => {
             bodyString += chunk;
@@ -177,7 +170,6 @@ async function loadNewFanficFromPaste(request, response) {
             let body;
             try {
                 body = JSON.parse(bodyString);
-                console.log('body of pasted fic:', body);
                 updateFicText(body.text);
                 updateFicSource();
                 response.statusCode = 200;
@@ -186,7 +178,7 @@ async function loadNewFanficFromPaste(request, response) {
                 resolve();
             } catch (e) {
                 response.statusCode = 400;
-                console.log('ERROR:', e);
+                console.error('ERROR:', e);
                 response.write('Unable to process request: ' + e);
                 response.end();
                 resolve();
@@ -209,7 +201,6 @@ async function loadNewFanficFromForm(request, response) {
 
         request.on('end', () => {
             let body = new URLSearchParams(bodyString);
-            console.log('body:', body);
             updateFicSource(body.get('source'));
             updateFicText(body.get('text'));
             response.statusCode = 303;

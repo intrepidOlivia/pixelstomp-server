@@ -48,10 +48,9 @@ function retrieveAccessToken(callback) {
                     bearerToken = result.access_token || null;
                     setTimer(result.expires_in || Date.now() / 1000);
                     callback && callback(queuedArgs.shift(), queuedArgs.shift());
-                    console.log('Request for bearer token complete. Bearer token has a current value of:', bearerToken);
                 })
                 .catch((errResult) => {
-                    console.log('Bearer token could not be retrieved. Result of query:', errResult);
+                    console.error('Bearer token could not be retrieved. Result of query:', errResult);
                 });
         } else {
             throw new Error(response.statusMessage);
@@ -72,7 +71,6 @@ function retrieveAccessToken(callback) {
 function makeAuthorizedRequest(path, callback) {
     // First check to make sure there is an access token and it is still valid
     if (!bearerToken) {
-        console.log('Request initiated but no bearer token was found. Requesting bearer token.');
         queuedArgs.push(path);
         queuedArgs.push(callback);
         retrieveAccessToken(makeAuthorizedRequest);
@@ -80,7 +78,6 @@ function makeAuthorizedRequest(path, callback) {
     }
 
     if (expiry <= Date.now() / 1000) {
-        console.log('Request initiated but bearer token was expired. Requesting new bearer token.');
         queuedArgs.push(path);
         queuedArgs.push(callback);
         retrieveAccessToken(makeAuthorizedRequest);
@@ -120,7 +117,6 @@ function makeAuthorizedRequest(path, callback) {
 function postAuthorizedRequest(path, callback, postQuery) {
     // TODO: Consolidate duplicated code into one method
     if (!bearerToken) {
-        console.log('Request initiated but no bearer token was found. Requesting bearer token.');
         queuedArgs.push(path);
         queuedArgs.push(callback);
         retrieveAccessToken(makeAuthorizedRequest);
@@ -128,7 +124,6 @@ function postAuthorizedRequest(path, callback, postQuery) {
     }
 
     if (expiry <= Date.now() / 1000) {
-        console.log('Request initiated but bearer token was expired. Requesting new bearer token.');
         queuedArgs.push(path);
         queuedArgs.push(callback);
         retrieveAccessToken(makeAuthorizedRequest);
@@ -196,7 +191,7 @@ function parseResponse(response) {
 // ---------------------
 
 function searchForRedditor(username, callback) {
-    console.log('searching for redditor:', username);
+    console.info('searching for redditor:', username);
     makeAuthorizedRequest(`/user/${username}/about`, function (result) {
         callback(JSON.stringify(result));
     });
@@ -209,7 +204,6 @@ function searchForRedditor(username, callback) {
  */
  function getAllComments(username, callback) {
     //send the request to retrieve the first page of comments
-    console.log(`Retrieving comments for redditor ${username}.`);
     let path = `/user/${username}/comments`;
     makeAuthorizedRequest(path, function (result) {
         if (typeof result === 'string') {
@@ -469,7 +463,6 @@ function trackVoteRhythm(post) {
 
     let Tabulator = require('./vote-tabulator');
     let voteTracker = new Tabulator(post);
-    console.log('vote Tracker initialized:', voteTracker);
 
 }
 
@@ -614,7 +607,6 @@ function getAllReplies(comment, callback) {
  */
 function pushCommentToThread(comment, thread) {
     if (comment.kind == 'more') {
-        console.log('number of some comments that were not retrieved:', comment.data.children.length);
         return thread;
     }
     thread.push({
@@ -727,7 +719,6 @@ function getCommenterPosts(subreddit, callback) {
                     }
                     return;
                 }
-                console.log('getting posts for author:', author);
                 getHotRedditorPosts(author, function (posts) {
                     authorMap[author] = true;
                     // callback(posts);    // TEMPORARY

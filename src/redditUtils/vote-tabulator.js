@@ -50,7 +50,6 @@ function VoteMap(votes) {
 
     this.timepoints = {};
     this.addTimePoint(moment().format('MM/DD/YYYY HH:mm:ss'), votes);
-    console.log('votemap initialized:', this);
 }
 
 function initializeComments(comments) {
