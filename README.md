@@ -23,6 +23,11 @@ A youtube search engine. Search for high quality thumbnails and for details abou
 2. Run `npm install`.
 3. Run `npm start`.
 
+**Option 3 - Run with [forever](https://www.npmjs.com/package/forever)**
+1. Install `forever` with `npm install i -g forever`
+2. Run `forever start ./forever_config.json`
+3. To stop/restart the script, run `forever stop pixelServer` and `forever restart pixelServer`
+
 ## youtube-module.js:
 
 ### Setup

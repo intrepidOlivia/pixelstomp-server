@@ -1,0 +1,7 @@
+{
+    "uid": "pixelServer",
+    "append": true,
+    "watch": false,
+    "script": "src/pixelServer.js",
+    "args": []
+  }
