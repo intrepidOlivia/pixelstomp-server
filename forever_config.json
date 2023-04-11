@@ -3,5 +3,8 @@
     "append": true,
     "watch": false,
     "script": "src/pixelServer.js",
-    "args": []
+    "args": [],
+    "logFile": "./logs/forever.log",
+    "outFile": "./logs/out.log",
+    "errFile": "./logs/error.log"
   }
