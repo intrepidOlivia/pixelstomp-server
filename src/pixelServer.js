@@ -20,9 +20,7 @@ var pixelServer = http.createServer(function (request, response) {
     try {
         switch (path) {
             case '/':
-                response.setHeader('Set-Cookie', ['pixelstomp_cookie=test1', 'language=javascript']);
-                response.write(JSON.stringify(request.headers));
-                response.end();
+				ServeError(response);
                 break;
 
 			case '/friendly-radius/twitter-authenticate.js':
