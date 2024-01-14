@@ -58,7 +58,7 @@ Note: Use of this module currently requires that a module called `environment.js
 
 Initialize via `require('./reddit-module')`
 
-Note: Use of this module currently requires that a module called `reddit-config.js` exists in the same directory which provides a valid reddit app key through an exported function called `getAppKey` and a valid reddit app secret through an exported function called `getAppSecret`. You can change this by hard-coding your app key and app secret into the places that these functions are called, but remember not to make your app key and especially your app secret available in a public place.
+Note: Use of this module requires that the methods `getRedditAppKey` and `getRedditAppSecret` are included in [environment.js](environment.js).
 
 ### API:
 

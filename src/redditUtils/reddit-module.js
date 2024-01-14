@@ -1,7 +1,7 @@
 // Constants
 let REDIRECT = 'http://pixelstomp.com/apps/reddit_lookup_utility/lookup.html';
-let APP_ID = require('../../reddit-config').getAppKey();
-let APP_SECRET = require('../../reddit-config').getAppSecret();
+let APP_ID = require('../../environment').getRedditAppKey();
+let APP_SECRET = require('../../environment').getRedditAppSecret();
 let USER_AGENT = 'pixelstomp-reddit-querier by poplopo';
 
 // REDDIT CONSTANTS
